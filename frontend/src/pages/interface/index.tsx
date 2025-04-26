@@ -26,11 +26,15 @@ function NodeRenderer({
   dragHandle: React.Ref<HTMLDivElement>;
   onRenameRequest: (n: NodeApi) => void;
 }) {
+  // Hardcoded boolean for error status - in a real app, this would come from your data
+  const hasError = node.id.startsWith("d"); // Just for demo: Direct Messages have errors
+  console.log(node);
+
   return (
     <div
       style={style}
       ref={dragHandle}
-      className="flex items-center gap-2 px-4 py-2 rounded-md cursor-pointer hover:bg-neutral-800"
+      className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-zinc-800/50 transition-colors duration-200 text-sm"
     >
       {/* collapse/expand */}
       <div
@@ -38,20 +42,38 @@ function NodeRenderer({
           e.stopPropagation();
           node.toggle();
         }}
-        className="flex items-center justify-center w-6 h-6 rounded hover:bg-neutral-700"
+        className="flex items-center justify-center w-6 h-6 rounded-sm hover:bg-zinc-700/80 transition-colors"
       >
-        {node.isInternal ? node.isOpen ? "▾" : "▸" : <div className="w-4" />}
+        {node.isInternal ? (
+          node.isOpen ? (
+            <span className="text-xl">▾</span>
+          ) : (
+            <span className="text-xl">▸</span>
+          )
+        ) : (
+          <div className="w-4" />
+        )}
       </div>
 
-      {/* label */}
+      {/* label - with truncation */}
       <div
-        className="flex-1 cursor-pointer"
+        className="flex-1 cursor-pointer py-1 text-xl font-medium truncate max-w-[200px]"
         onClick={(e) => {
           e.stopPropagation();
           onRenameRequest(node);
         }}
+        title={node.data.name} // Show full name on hover
       >
         {node.data.name}
+      </div>
+
+      {/* Status indicator */}
+      <div
+        className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${
+          hasError ? " text-red-500" : " text-green-500"
+        }`}
+      >
+        {hasError ? "ERR" : "OK"}
       </div>
     </div>
   );
@@ -59,27 +81,48 @@ function NodeRenderer({
 
 export default function InterfacePage() {
   const initialData = [
-    { id: "1", name: "Unread", children: [] },
-    { id: "2", name: "Threads", children: [] },
+    { id: "1", name: "Click the blue button on the top right", children: [] },
+    { id: "2", name: "Scroll down to reveal more options", children: [] },
     {
       id: "3",
-      name: "Chat Rooms",
+      name: "Hover over the menu to expand it",
       children: [
-        { id: "c1", name: "General", children: [] },
-        { id: "c2", name: "Random", children: [] },
-        { id: "c3", name: "Open Source Projects", children: [] },
+        {
+          id: "c1",
+          name: "Drag the slider to adjust brightness",
+          children: [],
+        },
+        {
+          id: "c2",
+          name: "Double-click the icon to open settings",
+          children: [],
+        },
+        { id: "c3", name: "Tap and hold to see quick actions", children: [] },
       ],
     },
     {
       id: "4",
-      name: "Direct Messages",
+      name: "Click on a user to open their profile",
       children: [
-        { id: "d1", name: "Alice", children: [] },
-        { id: "d2", name: "Bob", children: [] },
-        { id: "d3", name: "Charlie", children: [] },
+        {
+          id: "d1",
+          name: "Send a message by clicking the chat icon",
+          children: [],
+        },
+        {
+          id: "d2",
+          name: "Mute notifications using the bell icon",
+          children: [],
+        },
+        {
+          id: "d3",
+          name: "Start a video call from the top menu",
+          children: [],
+        },
       ],
     },
   ];
+
   const [data, controller] = useSimpleTree(initialData);
   const [renaming, setRenaming] = useState<RenameNode | null>(null);
 
@@ -154,7 +197,7 @@ function EditInteractionCard({
       </CardHeader>
       <CardContent className="flex flex-col md:flex-row gap-6">
         {/* Left side - Placeholder for GIF */}
-        <div className="w-full md:w-1/3 aspect-video bg-white rounded-lg flex items-center justify-center text-black">
+        <div className="w-full md:w-1/2 aspect-video bg-white rounded-lg flex items-center justify-center text-black">
           <span className="text-sm text-gray-500">Preview GIF</span>
         </div>
 
