@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Tree, useSimpleTree, NodeApi, TreeApi } from "react-arborist";
 import {
   Card,
@@ -34,37 +34,39 @@ function NodeRenderer({
     <div
       style={style}
       ref={dragHandle}
-      className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-zinc-800/50 transition-colors duration-200 text-sm"
+      className="flex items-center justify-between gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-zinc-800/50 transition-colors duration-200 text-sm"
     >
-      {/* collapse/expand */}
-      <div
-        onClick={(e) => {
-          e.stopPropagation();
-          node.toggle();
-        }}
-        className="flex items-center justify-center w-6 h-6 rounded-sm hover:bg-zinc-700/80 transition-colors"
-      >
-        {node.isInternal ? (
-          node.isOpen ? (
-            <span className="text-xl">▾</span>
+      <div className="flex items-center">
+        {/* collapse/expand */}
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            node.toggle();
+          }}
+          className="flex items-center justify-center w-6 h-6 rounded-sm hover:bg-zinc-700/80 transition-colors"
+        >
+          {node.children.length > 0 ? (
+            node.isOpen ? (
+              <span className="text-xl">▾</span>
+            ) : (
+              <span className="text-xl">▸</span>
+            )
           ) : (
-            <span className="text-xl">▸</span>
-          )
-        ) : (
-          <div className="w-4" />
-        )}
-      </div>
+            <span className="text-xl">•</span>
+          )}
+        </div>
 
-      {/* label - with truncation */}
-      <div
-        className="flex-1 cursor-pointer py-1 text-xl font-medium truncate max-w-[200px]"
-        onClick={(e) => {
-          e.stopPropagation();
-          onRenameRequest(node);
-        }}
-        title={node.data.name} // Show full name on hover
-      >
-        {node.data.name}
+        {/* label - with truncation */}
+        <div
+          className="flex-1 cursor-pointer py-1 text-xl font-medium truncate max-w-[270px]"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRenameRequest(node);
+          }}
+          title={node.data.name} // Show full name on hover
+        >
+          {node.data.name}
+        </div>
       </div>
 
       {/* Status indicator */}
@@ -74,102 +76,6 @@ function NodeRenderer({
         }`}
       >
         {hasError ? "ERR" : "OK"}
-      </div>
-    </div>
-  );
-}
-
-export default function InterfacePage() {
-  const initialData = [
-    { id: "1", name: "Click the blue button on the top right", children: [] },
-    { id: "2", name: "Scroll down to reveal more options", children: [] },
-    {
-      id: "3",
-      name: "Hover over the menu to expand it",
-      children: [
-        {
-          id: "c1",
-          name: "Drag the slider to adjust brightness",
-          children: [],
-        },
-        {
-          id: "c2",
-          name: "Double-click the icon to open settings",
-          children: [],
-        },
-        { id: "c3", name: "Tap and hold to see quick actions", children: [] },
-      ],
-    },
-    {
-      id: "4",
-      name: "Click on a user to open their profile",
-      children: [
-        {
-          id: "d1",
-          name: "Send a message by clicking the chat icon",
-          children: [],
-        },
-        {
-          id: "d2",
-          name: "Mute notifications using the bell icon",
-          children: [],
-        },
-        {
-          id: "d3",
-          name: "Start a video call from the top menu",
-          children: [],
-        },
-      ],
-    },
-  ];
-
-  const [data, controller] = useSimpleTree(initialData);
-  const [renaming, setRenaming] = useState<RenameNode | null>(null);
-
-  // whenever the user double‐clicks a node
-  function handleRenameRequest(node: NodeApi) {
-    setRenaming({ node, tempName: node.data.name });
-    // immediately deselect if you’d like:
-    node.deselect();
-  }
-
-  function saveRename() {
-    if (renaming) {
-      renaming.node.submit(renaming.tempName);
-    }
-  }
-
-  return (
-    <div className="relative flex h-screen w-screen items-center justify-center">
-      <div className="flex w-full justify-center ">
-        <Tree
-          {...controller}
-          data={data}
-          width={400}
-          indent={20}
-          rowHeight={36}
-          overscanCount={1}
-          padding={8}
-        >
-          {(props) => (
-            <NodeRenderer {...props} onRenameRequest={handleRenameRequest} />
-          )}
-        </Tree>
-        <div className="min-h-full">
-          {renaming && (
-            <EditInteractionCard
-              renaming={renaming}
-              setRenaming={setRenaming}
-              saveRename={saveRename}
-            />
-          )}
-          {!renaming && (
-            <div className="w-3xl text-3xl min-h-full justify-center flex items-center">
-              {"<-"} Click on on interaction to inspect its behaviour, or drag
-              and drop to change the order of execution!
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
@@ -243,5 +149,189 @@ function EditInteractionCard({
         </Button>
       </CardFooter>
     </Card>
+  );
+}
+
+export default function InterfacePage() {
+  const initialData = [
+    { id: "1", name: "Click the blue button on the top right", children: [] },
+    { id: "2", name: "Scroll down to reveal more options", children: [] },
+    {
+      id: "3",
+      name: "Hover over the menu to expand it",
+      children: [
+        {
+          id: "c1",
+          name: "Drag the slider to adjust brightness",
+          children: [],
+        },
+        {
+          id: "c2",
+          name: "Double-click the icon to open settings",
+          children: [],
+        },
+        { id: "c3", name: "Tap and hold to see quick actions", children: [] },
+      ],
+    },
+    {
+      id: "4",
+      name: "Click on a user to open their profile",
+      children: [
+        {
+          id: "d1",
+          name: "Send a message by clicking the chat icon",
+          children: [],
+        },
+        {
+          id: "d2",
+          name: "Mute notifications using the bell icon",
+          children: [],
+        },
+        {
+          id: "d3",
+          name: "Start a video call from the top menu",
+          children: [],
+        },
+      ],
+    },
+  ];
+
+  const [data, controller] = useSimpleTree(initialData);
+  const [renaming, setRenaming] = useState<RenameNode | null>(null);
+
+  // whenever the user double‐clicks a node
+  function handleRenameRequest(node: NodeApi) {
+    setRenaming({ node, tempName: node.data.name });
+    // immediately deselect if you’d like:
+    node.deselect();
+  }
+
+  function saveRename() {
+    if (renaming) {
+      renaming.node.submit(renaming.tempName);
+    }
+  }
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const setCanvasDimensions = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+
+    setCanvasDimensions();
+    window.addEventListener("resize", setCanvasDimensions);
+
+    const drawGrid = () => {
+      if (!ctx || !canvas) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const gridSize = 50;
+      ctx.strokeStyle = "#444444";
+      ctx.lineWidth = 1;
+
+      for (let y = 0; y < canvas.height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+
+      for (let x = 0; x < canvas.width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+    };
+
+    const animate = () => {
+      drawGrid();
+      requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+      window.removeEventListener("resize", setCanvasDimensions);
+    };
+  }, []);
+
+  return (
+    <div
+      className="fixed inset-0 z-0 border border-gray-800"
+      style={{
+        backgroundImage: `
+          linear-gradient(to right, rgba(30, 30, 30, 0.2), rgba(0, 0, 0, 0.1)),
+          linear-gradient(to bottom, rgba(20, 20, 20, 0.2), rgba(0, 0, 0, 0.1)),
+          linear-gradient(rgba(30, 30, 30, 0.4) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(30, 30, 30, 0.4) 1px, transparent 1px)
+        `,
+        backgroundSize: "100% 100%, 100% 100%, 50px 50px, 50px 50px",
+      }}
+    >
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0"
+        style={{ filter: "contrast(1.1)" }}
+      />
+
+      {/* Vignette */}
+      <div
+        className="absolute inset-0 bg-black opacity-40 mix-blend-multiply"
+        style={{
+          maskImage:
+            "radial-gradient(ellipse at center, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 80%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse at center, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 80%)",
+        }}
+      />
+
+      {/* Bottom Gradient */}
+      <div className="absolute bottom-0 left-0 right-0 h-[20vh] bg-gradient-to-t from-black to-transparent" />
+
+      <div className="relative flex h-screen w-screen items-center justify-center">
+        <div className="flex p-10 justify-center bg-black">
+          <Tree
+            {...controller}
+            data={data}
+            width={400}
+            indent={20}
+            rowHeight={36}
+            overscanCount={1}
+            padding={8}
+          >
+            {(props) => (
+              <NodeRenderer {...props} onRenameRequest={handleRenameRequest} />
+            )}
+          </Tree>
+          <div className="min-h-full">
+            {renaming && (
+              <EditInteractionCard
+                renaming={renaming}
+                setRenaming={setRenaming}
+                saveRename={saveRename}
+              />
+            )}
+            {!renaming && (
+              <div className="w-3xl text-3xl min-h-full justify-center flex items-center">
+                {"<-"} Click on on interaction to inspect its behaviour, or drag
+                and drop to change the order of execution!
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
