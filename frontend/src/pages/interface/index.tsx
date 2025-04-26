@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { AnimatePresence, motion } from "framer-motion";
 
 type RenameNode = { node: NodeApi; tempName: string };
 
@@ -113,27 +114,51 @@ export default function InterfacePage() {
       </Tree>
 
       {renaming && (
-        <Card className="fixed right-4 top-1/4 w-64 shadow-lg">
-          <CardHeader>
-            <CardTitle>Rename Node</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Input
-              value={renaming.tempName}
-              onChange={(e) =>
-                setRenaming((r) => (r ? { ...r, tempName: e.target.value } : r))
-              }
-            />
-          </CardContent>
-          <CardFooter className="flex justify-end space-x-2">
-            <Button size="sm" variant="ghost" onClick={() => setRenaming(null)}>
-              Cancel
-            </Button>
-            <Button size="sm" onClick={saveRename}>
-              Save
-            </Button>
-          </CardFooter>
-        </Card>
+        <AnimatePresence>
+          {renaming && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed right-4 top-1/4 w-64"
+            >
+              <Card className="bg-black text-white shadow-lg">
+                <CardHeader className="relative">
+                  <CardTitle>Rename Node</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Input
+                    value={renaming.tempName}
+                    onChange={(e) =>
+                      setRenaming((r) =>
+                        r ? { ...r, tempName: e.target.value } : r
+                      )
+                    }
+                    className="bg-black text-white"
+                  />
+                </CardContent>
+                <CardFooter className="flex justify-end space-x-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="cursor-pointer"
+                    onClick={() => setRenaming(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="cursor-pointer"
+                    onClick={saveRename}
+                  >
+                    Save
+                  </Button>
+                </CardFooter>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
       )}
     </div>
   );
