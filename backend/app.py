@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, send_from_directory
-from utils.agent import run_agent
+from utils.agent import run_agent, mcp_server_manager
 
 # Create a Flask application instance
 app = Flask(__name__)
@@ -23,8 +23,10 @@ async def run_testing_agent():
 
 
 @app.get("/image")
-def get_associated_screenshot():
-    return "hi"
+async def get_associated_screenshot():
+    result = await mcp_server_manager()
+
+    return "NICE"
 
 
 # Custom 404 error handler
