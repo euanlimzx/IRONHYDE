@@ -1,5 +1,14 @@
+"use client";
+
+import type React from "react";
+
 import { useState, useEffect, useRef } from "react";
-import { Tree, useSimpleTree, NodeApi, TreeApi } from "react-arborist";
+import {
+  Tree,
+  useSimpleTree,
+  type NodeApi,
+  type TreeApi,
+} from "react-arborist";
 import {
   Card,
   CardHeader,
@@ -7,9 +16,11 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Inter } from "next/font/google";
+
+const inter = Inter({ subsets: ["latin"] });
 
 type RenameNode = { node: NodeApi; tempName: string };
 
@@ -57,7 +68,7 @@ function NodeRenderer({
 
         {/* label - with truncation */}
         <div
-          className="flex-1 cursor-pointer py-1 text-xl font-medium truncate max-w-[270px]"
+          className="flex-1 cursor-pointer py-1 text-base font-medium tracking-tight truncate max-w-[270px]"
           onClick={(e) => {
             e.stopPropagation();
             onRenameRequest(node);
@@ -70,7 +81,7 @@ function NodeRenderer({
 
       {/* Status indicator */}
       <div
-        className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${
+        className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-semibold ${
           hasError ? " text-red-500" : " text-green-500"
         }`}
       >
@@ -98,15 +109,17 @@ function EditInteractionCard({
   return (
     <Card className="bg-black text-white w-3xl h-full border border-gray-800">
       {!renaming && (
-        <div className="w-3xl p-25 text-zinc-500 text-xl text-center min-h-full justify-center flex items-center">
-          Click on on interaction to inspect its behaviour, or drag to reorder
+        <div className="w-3xl p-25 text-zinc-500 text-base font-light tracking-wide text-center min-h-full justify-center flex items-center">
+          Click on an interaction to inspect its behaviour, or drag to reorder
           the execution of instructions
         </div>
       )}
       {renaming && (
         <>
           <CardHeader>
-            <CardTitle>Edit interaction</CardTitle>
+            <CardTitle className="text-xl font-semibold tracking-tight">
+              Edit interaction
+            </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col md:flex-row gap-6 h-full">
             {/* Left side - Placeholder for GIF */}
@@ -123,7 +136,7 @@ function EditInteractionCard({
                     r ? { ...r, tempName: e.target.value } : r
                   )
                 }
-                className="bg-black text-white border-gray-700 text-xl h-2/3 max-w-90"
+                className="bg-black text-white border-gray-700 text-base font-normal leading-relaxed h-2/3 max-w-90"
               />
               <div className="flex w-full gap-x-2">
                 <Button
@@ -146,7 +159,7 @@ function EditInteractionCard({
           <CardFooter className="flex-col items-start pt-2 h-full">
             <div className="flex text-sm">
               {/* Observed response */}
-              <p>Observed response:</p>
+              <p className="font-medium">Observed response:</p>
               {/* Error status indicator */}
               <div className="flex items-center gap-2 pl-3">
                 <div
@@ -158,7 +171,9 @@ function EditInteractionCard({
               </div>
             </div>
 
-            <div className="text-sm pt-3">{observedResponse}</div>
+            <div className="text-sm pt-3 font-light leading-relaxed">
+              {observedResponse}
+            </div>
 
             <div className="flex h-full w-full items-end">
               <div className="flex w-full space-x-2.5 ">
@@ -300,7 +315,7 @@ export default function InterfacePage() {
 
   return (
     <div
-      className="fixed inset-0 z-0 border border-gray-800"
+      className={`fixed inset-0 z-0 border border-gray-800 ${inter.className}`}
       style={{
         backgroundImage: `
           linear-gradient(to right, rgba(30, 30, 30, 0.2), rgba(0, 0, 0, 0.1)),
