@@ -54,7 +54,7 @@ async def mcp_server_manager():
         "mcpServers": {
             "playwright": {
                 "command": "npx",
-                "args": ["@playwright/mcp@latest"],
+                "args": ["@playwright/mcp@latest", "--headless"],
                 "env": {"DISPLAY": ":1"},
             }
         }
