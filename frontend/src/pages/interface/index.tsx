@@ -1,40 +1,53 @@
-import { Tree, useSimpleTree } from "react-arborist";
 import { useState, useEffect } from "react";
+import { Tree, useSimpleTree, NodeApi, TreeApi } from "react-arborist";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
-function Node({ node, style, dragHandle }) {
+type RenameNode = { node: NodeApi; tempName: string };
+
+function NodeRenderer({
+  node,
+  style,
+  dragHandle,
+  onRenameRequest,
+}: {
+  node: NodeApi;
+  tree: TreeApi;
+  style: React.CSSProperties;
+  dragHandle: React.Ref<HTMLDivElement>;
+  onRenameRequest: (n: NodeApi) => void;
+}) {
   return (
     <div
       style={style}
       ref={dragHandle}
-      className="flex items-center gap-2 px-4 py-2 transition-colors duration-200 rounded-md cursor-pointer"
+      className="flex items-center gap-2 px-4 py-2 rounded-md cursor-pointer hover:bg-neutral-800"
     >
-      {/* Expand/Collapse Button */}
+      {/* collapse/expand */}
       <div
         onClick={(e) => {
           e.stopPropagation();
           node.toggle();
         }}
-        className="flex items-center justify-center w-8 h-8 rounded hover:bg-neutral-800"
+        className="flex items-center justify-center w-6 h-6 rounded hover:bg-neutral-700"
       >
-        {node.isInternal ? (
-          <div className="text-neutral-400 select-none">
-            {node.isOpen ? "▾" : "▸"}
-          </div>
-        ) : (
-          <div className="w-4" />
-        )}
+        {node.isInternal ? node.isOpen ? "▾" : "▸" : <div className="w-4" />}
       </div>
 
-      {/* Node Label */}
+      {/* label */}
       <div
-        onDoubleClick={(e) => {
+        className="flex-1 cursor-pointer"
+        onClick={(e) => {
           e.stopPropagation();
-          const newName = prompt("Rename node", node.data.name);
-          if (newName) {
-            node.submit(newName);
-          }
+          onRenameRequest(node);
         }}
-        className="cursor-pointer hover:bg-neutral-900"
       >
         {node.data.name}
       </div>
@@ -66,22 +79,62 @@ export default function InterfacePage() {
     },
   ];
   const [data, controller] = useSimpleTree(initialData);
+  const [renaming, setRenaming] = useState<RenameNode | null>(null);
 
-  useEffect(() => {
-    console.log(data);
-  }, [data]);
+  // whenever the user double‐clicks a node
+  function handleRenameRequest(node: NodeApi) {
+    setRenaming({ node, tempName: node.data.name });
+    // immediately deselect if you’d like:
+    node.deselect();
+  }
+
+  function saveRename() {
+    if (renaming) {
+      renaming.node.submit(renaming.tempName);
+      setRenaming(null);
+    }
+  }
+
   return (
-    <Tree
-      {...controller}
-      data={data}
-      width={400}
-      height={1000}
-      indent={24}
-      rowHeight={40}
-      overscanCount={1}
-      padding={10}
-    >
-      {Node}
-    </Tree>
+    <div className="relative flex">
+      <Tree
+        {...controller}
+        data={data}
+        width={400}
+        height={800}
+        indent={20}
+        rowHeight={36}
+        overscanCount={1}
+        padding={8}
+      >
+        {(props) => (
+          <NodeRenderer {...props} onRenameRequest={handleRenameRequest} />
+        )}
+      </Tree>
+
+      {renaming && (
+        <Card className="fixed right-4 top-1/4 w-64 shadow-lg">
+          <CardHeader>
+            <CardTitle>Rename Node</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Input
+              value={renaming.tempName}
+              onChange={(e) =>
+                setRenaming((r) => (r ? { ...r, tempName: e.target.value } : r))
+              }
+            />
+          </CardContent>
+          <CardFooter className="flex justify-end space-x-2">
+            <Button size="sm" variant="ghost" onClick={() => setRenaming(null)}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={saveRename}>
+              Save
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
+    </div>
   );
 }
