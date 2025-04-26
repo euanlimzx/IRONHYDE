@@ -97,7 +97,7 @@ export default function IronhideLanding() {
         <div className="max-w-3xl text-center">
           <h1 className="mb-6 text-5xl font-bold tracking-tighter sm:text-6xl md:text-7xl lg:text-8xl">
             <span className="bg-gradient-to-r from-slate-200 via-slate-100 to-slate-300 bg-clip-text text-transparent">
-              IRONHIDE.AI
+              IRONHYDE.AI
             </span>
           </h1>
 

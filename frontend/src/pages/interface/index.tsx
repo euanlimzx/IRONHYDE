@@ -19,6 +19,23 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Inter } from "next/font/google";
+import { Separator } from "@/components/ui/separator";
+import { Check, ChevronsUpDown } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -109,7 +126,7 @@ function EditInteractionCard({
   return (
     <Card className="bg-black text-white w-3xl h-full border border-gray-800">
       {!renaming && (
-        <div className="w-3xl p-25 text-zinc-500 text-base font-light tracking-wide text-center min-h-full justify-center flex items-center">
+        <div className="font-semibold w-3xl p-25 text-zinc-500 text-base font-light tracking-wide text-center min-h-full justify-center flex items-center">
           Click on an interaction to inspect its behaviour, or drag to reorder
           the execution of instructions
         </div>
@@ -179,13 +196,13 @@ function EditInteractionCard({
               <div className="flex w-full space-x-2.5 ">
                 <Button
                   size="sm"
-                  className="cursor-pointer bg-black text-red-600 hover:bg-gray-900 flex-1 border border-gray-800"
+                  className="cursor-pointer bg-black text-red-600 hover:bg-zinc-800/50 flex-1 border border-gray-800"
                 >
                   This should be an error
                 </Button>
                 <Button
                   size="sm"
-                  className="cursor-pointer bg-black text-green-600 hover:bg-gray-900 flex-1 border border-gray-800"
+                  className="cursor-pointer bg-black text-green-600 hover:bg-zinc-800/50 flex-1 border border-gray-800"
                 >
                   This is the expected response
                 </Button>
@@ -242,8 +259,33 @@ export default function InterfacePage() {
     },
   ];
 
+  const frameworks = [
+    {
+      value: "next.js",
+      label: "Next.js",
+    },
+    {
+      value: "sveltekit",
+      label: "SvelteKit loremladfbkasdo jaopsd",
+    },
+    {
+      value: "nuxt.js",
+      label: "Nuxt.js",
+    },
+    {
+      value: "remix",
+      label: "Remix",
+    },
+    {
+      value: "astro",
+      label: "Astro",
+    },
+  ];
+
   const [data, controller] = useSimpleTree(initialData);
   const [renaming, setRenaming] = useState<RenameNode | null>(null);
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState("");
 
   // whenever the user double‐clicks a node
   function handleRenameRequest(node: NodeApi) {
@@ -346,27 +388,89 @@ export default function InterfacePage() {
       {/* Bottom Gradient */}
       <div className="absolute bottom-0 left-0 right-0 h-[20vh] bg-gradient-to-t from-black to-transparent" />
 
-      <div className="relative flex h-screen w-screen items-center justify-center">
-        <div className="flex p-10 justify-center bg-black space-x-5">
-          <Tree
-            {...controller}
-            data={data}
-            width={400}
-            indent={20}
-            rowHeight={36}
-            overscanCount={1}
-            padding={8}
-          >
-            {(props) => (
-              <NodeRenderer {...props} onRenameRequest={handleRenameRequest} />
-            )}
-          </Tree>
-          <div className="min-h-full">
-            <EditInteractionCard
-              renaming={renaming}
-              setRenaming={setRenaming}
-              saveRename={saveRename}
-            />
+      <div className="relative flex h-screen w-screen items-center justify-center ">
+        <div className="flex p-10 justify-center bg-black space-x-5 border border-gray-800 rounded-2xl flex-col">
+          <div className="flex align-middle space-x-2.5">
+            <p className="text-md font-semibold">{">>"}</p>
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className="w-[200px] justify-between border border-gray-800 hover:bg-zinc-800/50 hover:text-white  cursor-pointer"
+                >
+                  {value
+                    ? frameworks.find((framework) => framework.value === value)
+                        ?.label
+                    : "Select a page..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[300px] p-0">
+                <Command className="border bg-black border-black">
+                  <CommandInput
+                    placeholder="Search for a page..."
+                    className="text-white"
+                  />
+                  <CommandList className="w-full">
+                    <CommandEmpty>No framework found.</CommandEmpty>
+                    <CommandGroup>
+                      {frameworks.map((framework) => (
+                        <CommandItem
+                          key={framework.value}
+                          value={framework.value}
+                          onSelect={(currentValue) => {
+                            setValue(
+                              currentValue === value ? "" : currentValue
+                            );
+                            setOpen(false);
+                          }}
+                          className="cursor-pointer w-full"
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              value === framework.value
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {framework.label}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <Separator className="h-[1px] bg-gray-800 my-5" />
+          <div className="flex ">
+            <Tree
+              {...controller}
+              data={data}
+              width={400}
+              indent={20}
+              rowHeight={36}
+              overscanCount={1}
+              padding={8}
+            >
+              {(props) => (
+                <NodeRenderer
+                  {...props}
+                  onRenameRequest={handleRenameRequest}
+                />
+              )}
+            </Tree>
+            <div className="min-h-full pl-5">
+              <EditInteractionCard
+                renaming={renaming}
+                setRenaming={setRenaming}
+                saveRename={saveRename}
+              />
+            </div>
           </div>
         </div>
       </div>
