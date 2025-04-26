@@ -35,7 +35,7 @@ async def run_agent():
         max_steps=30,
         system_prompt=(
             "Return your result as a JSON of the following format:"
-            "{{success: bool, message: str}}"
+            "{{success: bool, message: str, captured_network_requests: str}}"
         ),
     )
 
