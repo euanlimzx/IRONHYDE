@@ -26,7 +26,16 @@ function Node({ node, style, dragHandle }) {
       </div>
 
       {/* Node Label */}
-      <div className="cursor-pointer hover:bg-neutral-900">
+      <div
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          const newName = prompt("Rename node", node.data.name);
+          if (newName) {
+            node.submit(newName);
+          }
+        }}
+        className="cursor-pointer hover:bg-neutral-900"
+      >
         {node.data.name}
       </div>
     </div>
