@@ -1,4 +1,5 @@
 from flask import Flask
+from utils.agent import run_agent
 
 # Create a Flask application instance
 app = Flask(__name__)
@@ -8,6 +9,17 @@ app = Flask(__name__)
 @app.route("/")
 def home():
     return "Hello World! Welcome to my Flask server."
+
+
+@app.route("/test-site")
+async def run_testing_agent():
+    result = await run_agent()
+
+    if not result.get("success"):
+        print(result.get("message"))
+        return "Error encountered when running tests on the site"
+
+    return "Yay"
 
 
 # Custom 404 error handler
