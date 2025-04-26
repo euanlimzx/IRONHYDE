@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 from utils.agent import run_agent
 
 # Create a Flask application instance
@@ -19,7 +19,7 @@ async def run_testing_agent():
         print(result.get("message"))
         return "Error encountered when running tests on the site"
 
-    return "Yay"
+    return jsonify(result)
 
 
 # Custom 404 error handler
