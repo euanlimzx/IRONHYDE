@@ -215,77 +215,26 @@ function EditInteractionCard({
   );
 }
 
-export default function InterfacePage() {
-  const initialData = [
-    { id: "1", name: "Click the blue button on the top right", children: [] },
-    { id: "2", name: "Scroll down to reveal more options", children: [] },
-    {
-      id: "3",
-      name: "Hover over the menu to expand it",
-      children: [
-        {
-          id: "c1",
-          name: "Drag the slider to adjust brightness",
-          children: [],
-        },
-        {
-          id: "c2",
-          name: "Double-click the icon to open settings",
-          children: [],
-        },
-        { id: "c3", name: "Tap and hold to see quick actions", children: [] },
-      ],
-    },
-    {
-      id: "4",
-      name: "Click on a user to open their profile",
-      children: [
-        {
-          id: "d1",
-          name: "Send a message by clicking the chat icon",
-          children: [],
-        },
-        {
-          id: "d2",
-          name: "Mute notifications using the bell icon",
-          children: [],
-        },
-        {
-          id: "d3",
-          name: "Start a video call from the top menu",
-          children: [],
-        },
-      ],
-    },
-  ];
+export default function InterfacePage({ payload, domain }) {
+  if (!payload) return <div>loading</div>;
 
-  const frameworks = [
-    {
-      value: "next.js",
-      label: "Next.js",
-    },
-    {
-      value: "sveltekit",
-      label: "SvelteKit loremladfbkasdo jaopsd",
-    },
-    {
-      value: "nuxt.js",
-      label: "Nuxt.js",
-    },
-    {
-      value: "remix",
-      label: "Remix",
-    },
-    {
-      value: "astro",
-      label: "Astro",
-    },
-  ];
-
-  const [data, controller] = useSimpleTree(initialData);
+  const [data, controller] = useSimpleTree(payload.interactions);
+  const [routes, setRoutes] = useState([]);
   const [renaming, setRenaming] = useState<RenameNode | null>(null);
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
+
+  useEffect(() => {
+    function processUrls(urls, domain) {
+      return urls.map((url) => {
+        return {
+          value: url,
+          label: url.replace(domain, ""),
+        };
+      });
+    }
+    setRoutes(processUrls(payload.urls, domain));
+  }, [payload]);
 
   // whenever the user double‐clicks a node
   function handleRenameRequest(node: NodeApi) {
@@ -300,177 +249,81 @@ export default function InterfacePage() {
     }
   }
 
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const setCanvasDimensions = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-
-    setCanvasDimensions();
-    window.addEventListener("resize", setCanvasDimensions);
-
-    const drawGrid = () => {
-      if (!ctx || !canvas) return;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "#000000";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const gridSize = 50;
-      ctx.strokeStyle = "#444444";
-      ctx.lineWidth = 1;
-
-      for (let y = 0; y < canvas.height; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-      }
-
-      for (let x = 0; x < canvas.width; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-      }
-    };
-
-    const animate = () => {
-      drawGrid();
-      requestAnimationFrame(animate);
-    };
-
-    animate();
-
-    return () => {
-      window.removeEventListener("resize", setCanvasDimensions);
-    };
-  }, []);
-
   return (
-    <div
-      className={`fixed inset-0 z-0 border border-gray-800 ${inter.className}`}
-      style={{
-        backgroundImage: `
-          linear-gradient(to right, rgba(30, 30, 30, 0.2), rgba(0, 0, 0, 0.1)),
-          linear-gradient(to bottom, rgba(20, 20, 20, 0.2), rgba(0, 0, 0, 0.1)),
-          linear-gradient(rgba(30, 30, 30, 0.4) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(30, 30, 30, 0.4) 1px, transparent 1px)
-        `,
-        backgroundSize: "100% 100%, 100% 100%, 50px 50px, 50px 50px",
-      }}
-    >
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0"
-        style={{ filter: "contrast(1.1)" }}
-      />
-
-      {/* Vignette */}
-      <div
-        className="absolute inset-0 bg-black opacity-40 mix-blend-multiply"
-        style={{
-          maskImage:
-            "radial-gradient(ellipse at center, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 80%)",
-          WebkitMaskImage:
-            "radial-gradient(ellipse at center, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 80%)",
-        }}
-      />
-
-      {/* Bottom Gradient */}
-      <div className="absolute bottom-0 left-0 right-0 h-[20vh] bg-gradient-to-t from-black to-transparent" />
-
-      <div className="relative flex h-screen w-screen items-center justify-center ">
-        <div className="flex p-10 justify-center bg-black space-x-5 border border-gray-800 rounded-2xl flex-col">
-          <div className="flex align-middle space-x-2.5">
-            <p className="text-md font-semibold">{">>"}</p>
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={open}
-                  className="w-[200px] justify-between border border-gray-800 hover:bg-zinc-800/50 hover:text-white  cursor-pointer"
-                >
-                  {value
-                    ? frameworks.find((framework) => framework.value === value)
-                        ?.label
-                    : "Select a page..."}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[300px] p-0">
-                <Command className="border bg-black border-black">
-                  <CommandInput
-                    placeholder="Search for a page..."
-                    className="text-white"
-                  />
-                  <CommandList className="w-full">
-                    <CommandEmpty>No framework found.</CommandEmpty>
-                    <CommandGroup>
-                      {frameworks.map((framework) => (
-                        <CommandItem
-                          key={framework.value}
-                          value={framework.value}
-                          onSelect={(currentValue) => {
-                            setValue(
-                              currentValue === value ? "" : currentValue
-                            );
-                            setOpen(false);
-                          }}
-                          className="cursor-pointer w-full"
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              value === framework.value
-                                ? "opacity-100"
-                                : "opacity-0"
-                            )}
-                          />
-                          {framework.label}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          <Separator className="h-[1px] bg-gray-800 my-5" />
-          <div className="flex ">
-            <Tree
-              {...controller}
-              data={data}
-              width={400}
-              indent={20}
-              rowHeight={36}
-              overscanCount={1}
-              padding={8}
-            >
-              {(props) => (
-                <NodeRenderer
-                  {...props}
-                  onRenameRequest={handleRenameRequest}
+    <div className="relative flex h-screen w-screen items-center justify-center z-10 ">
+      <div className="flex p-10 justify-center bg-black space-x-5 border border-gray-800 rounded-2xl flex-col shadow-2xl shadow-gray-900">
+        <div className="flex align-middle space-x-2.5">
+          <p className="text-md font-semibold">{">>"}</p>
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={open}
+                className="w-[200px] justify-between border border-gray-800 hover:bg-zinc-800/50 hover:text-white  cursor-pointer"
+              >
+                {value
+                  ? routes.find((route) => route.value === value)?.label
+                  : "Select a page..."}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[300px] p-0">
+              <Command className="border bg-black border-black">
+                <CommandInput
+                  placeholder="Search for a page..."
+                  className="text-white"
                 />
-              )}
-            </Tree>
-            <div className="min-h-full pl-5">
-              <EditInteractionCard
-                renaming={renaming}
-                setRenaming={setRenaming}
-                saveRename={saveRename}
-              />
-            </div>
+                <CommandList className="w-full">
+                  <CommandEmpty>No route found.</CommandEmpty>
+                  <CommandGroup>
+                    {routes.map((route) => (
+                      <CommandItem
+                        key={route.value}
+                        value={route.value}
+                        onSelect={(currentValue) => {
+                          setValue(currentValue === value ? "" : currentValue);
+                          setOpen(false);
+                        }}
+                        className="cursor-pointer w-full"
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            value === route.value ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {route.label}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <Separator className="h-[1px] bg-gray-800 my-5" />
+        <div className="flex ">
+          <Tree
+            {...controller}
+            data={data}
+            width={400}
+            indent={20}
+            rowHeight={36}
+            overscanCount={1}
+            padding={8}
+          >
+            {(props) => (
+              <NodeRenderer {...props} onRenameRequest={handleRenameRequest} />
+            )}
+          </Tree>
+          <div className="min-h-full pl-5">
+            <EditInteractionCard
+              renaming={renaming}
+              setRenaming={setRenaming}
+              saveRename={saveRename}
+            />
           </div>
         </div>
       </div>
