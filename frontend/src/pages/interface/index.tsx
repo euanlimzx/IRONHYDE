@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@radix-ui/react-separator";
 import { AnimatePresence, motion } from "framer-motion";
 
 type RenameNode = { node: NodeApi; tempName: string };
@@ -92,74 +93,112 @@ export default function InterfacePage() {
   function saveRename() {
     if (renaming) {
       renaming.node.submit(renaming.tempName);
-      setRenaming(null);
     }
   }
 
   return (
-    <div className="relative flex">
-      <Tree
-        {...controller}
-        data={data}
-        width={400}
-        height={800}
-        indent={20}
-        rowHeight={36}
-        overscanCount={1}
-        padding={8}
-      >
-        {(props) => (
-          <NodeRenderer {...props} onRenameRequest={handleRenameRequest} />
-        )}
-      </Tree>
-
-      {renaming && (
-        <AnimatePresence>
-          {renaming && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed right-4 top-1/4 w-64"
-            >
-              <Card className="bg-black text-white shadow-lg">
-                <CardHeader className="relative">
-                  <CardTitle>Rename Node</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Input
-                    value={renaming.tempName}
-                    onChange={(e) =>
-                      setRenaming((r) =>
-                        r ? { ...r, tempName: e.target.value } : r
-                      )
-                    }
-                    className="bg-black text-white"
-                  />
-                </CardContent>
-                <CardFooter className="flex justify-end space-x-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="cursor-pointer"
-                    onClick={() => setRenaming(null)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="cursor-pointer"
-                    onClick={saveRename}
-                  >
-                    Save
-                  </Button>
-                </CardFooter>
-              </Card>
-            </motion.div>
+    <div className="relative flex h-screen w-screen items-center justify-center">
+      <div className="flex w-full justify-center ">
+        <Tree
+          {...controller}
+          data={data}
+          width={400}
+          indent={20}
+          rowHeight={36}
+          overscanCount={1}
+          padding={8}
+        >
+          {(props) => (
+            <NodeRenderer {...props} onRenameRequest={handleRenameRequest} />
           )}
-        </AnimatePresence>
-      )}
+        </Tree>
+        <div className="min-h-full">
+          {renaming && (
+            <EditInteractionCard
+              renaming={renaming}
+              setRenaming={setRenaming}
+              saveRename={saveRename}
+            />
+          )}
+          {!renaming && (
+            <div className="w-3xl text-3xl min-h-full justify-center flex items-center">
+              {"<-"} Click on on interaction to inspect its behaviour, or drag
+              and drop to change the order of execution!
+            </div>
+          )}
+        </div>
+      </div>
     </div>
+  );
+}
+
+interface EditInteractionCardProps {
+  renaming: RenameNode;
+  setRenaming: (callback: (r: any) => any) => void;
+  saveRename: () => void;
+}
+
+function EditInteractionCard({
+  renaming,
+  setRenaming,
+  saveRename,
+}: EditInteractionCardProps) {
+  const hasError = false; // Toggle between true/false to see different states
+  const observedResponse =
+    "The model responded with a detailed explanation about the topic as expected.";
+
+  return (
+    <Card className="bg-black text-white w-3xl h-full border border-gray-800">
+      <CardHeader>
+        <CardTitle>Edit interaction</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col md:flex-row gap-6">
+        {/* Left side - Placeholder for GIF */}
+        <div className="w-full md:w-1/3 aspect-video bg-white rounded-lg flex items-center justify-center text-black">
+          <span className="text-sm text-gray-500">Preview GIF</span>
+        </div>
+
+        {/* Right side - Content */}
+        <div className="w-full md:w-2/3 space-y-4">
+          <Input
+            value={renaming.tempName}
+            onChange={(e) =>
+              setRenaming((r) => (r ? { ...r, tempName: e.target.value } : r))
+            }
+            className="bg-black text-white border-gray-700 text-xl"
+          />
+
+          {/* Error status indicator */}
+          <div className="flex items-center gap-2">
+            <div
+              className={`w-3 h-3 rounded-full ${
+                hasError ? "bg-red-500" : "bg-green-500"
+              }`}
+            ></div>
+            <span>{hasError ? "Error detected" : "No errors"}</span>
+          </div>
+
+          {/* Observed response */}
+          <div className="space-y-1">
+            <p className="text-sm text-gray-400">Observed response:</p>
+            <div className="p-3 bg-gray-900 rounded-md text-sm">
+              {observedResponse}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+
+      <Separator className="bg-gray-800" />
+
+      <CardFooter className="flex justify-end space-x-2 pt-4">
+        <Button
+          size="sm"
+          className="cursor-pointer bg-white text-black hover:bg-gray-300"
+          onClick={saveRename}
+        >
+          Generate preview
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }
