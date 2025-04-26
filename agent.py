@@ -34,7 +34,7 @@ async def main():
 
     # Run the query
     result = await agent.run(
-        "Find the best restaurant in San Francisco",
+        "visit https://the-internet.herokuapp.com/add_remove_elements/ and click add element.",
     )
     print(f"\nResult: {result}")
 
