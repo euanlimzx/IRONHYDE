@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 from utils.agent import run_agent
 
 # Create a Flask application instance
@@ -20,6 +20,11 @@ async def run_testing_agent():
         return "Error encountered when running tests on the site"
 
     return jsonify(result)
+
+
+@app.get("/image")
+def get_associated_screenshot():
+    return "hi"
 
 
 # Custom 404 error handler
