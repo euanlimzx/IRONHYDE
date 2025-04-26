@@ -8,9 +8,8 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@radix-ui/react-separator";
-import { AnimatePresence, motion } from "framer-motion";
 
 type RenameNode = { node: NodeApi; tempName: string };
 
@@ -98,56 +97,88 @@ function EditInteractionCard({
 
   return (
     <Card className="bg-black text-white w-3xl h-full border border-gray-800">
-      <CardHeader>
-        <CardTitle>Edit interaction</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col md:flex-row gap-6">
-        {/* Left side - Placeholder for GIF */}
-        <div className="w-full md:w-1/2 aspect-video bg-white rounded-lg flex items-center justify-center text-black">
-          <span className="text-sm text-gray-500">Preview GIF</span>
+      {!renaming && (
+        <div className="w-3xl p-25 text-zinc-500 text-xl text-center min-h-full justify-center flex items-center">
+          Click on on interaction to inspect its behaviour, or drag to reorder
+          the execution of instructions
         </div>
-
-        {/* Right side - Content */}
-        <div className="w-full md:w-2/3 space-y-4">
-          <Input
-            value={renaming.tempName}
-            onChange={(e) =>
-              setRenaming((r) => (r ? { ...r, tempName: e.target.value } : r))
-            }
-            className="bg-black text-white border-gray-700 text-xl"
-          />
-
-          {/* Error status indicator */}
-          <div className="flex items-center gap-2">
-            <div
-              className={`w-3 h-3 rounded-full ${
-                hasError ? "bg-red-500" : "bg-green-500"
-              }`}
-            ></div>
-            <span>{hasError ? "Error detected" : "No errors"}</span>
-          </div>
-
-          {/* Observed response */}
-          <div className="space-y-1">
-            <p className="text-sm text-gray-400">Observed response:</p>
-            <div className="p-3 bg-gray-900 rounded-md text-sm">
-              {observedResponse}
+      )}
+      {renaming && (
+        <>
+          <CardHeader>
+            <CardTitle>Edit interaction</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col md:flex-row gap-6 h-full">
+            {/* Left side - Placeholder for GIF */}
+            <div className="w-full md:w-1/2 aspect-video bg-white rounded-lg flex items-center justify-center text-black">
+              <span className="text-sm text-gray-500">Preview GIF</span>
             </div>
-          </div>
-        </div>
-      </CardContent>
 
-      <Separator className="bg-gray-800" />
+            {/* Right side - Content */}
+            <div className="w-full md:w-2/3 h-full flex flex-col justify-between">
+              <Textarea
+                value={renaming.tempName}
+                onChange={(e) =>
+                  setRenaming((r) =>
+                    r ? { ...r, tempName: e.target.value } : r
+                  )
+                }
+                className="bg-black text-white border-gray-700 text-xl h-2/3 max-w-90"
+              />
+              <div className="flex w-full gap-x-2">
+                <Button
+                  size="sm"
+                  className="cursor-pointer bg-white text-black hover:bg-gray-300 flex-1"
+                  onClick={saveRename}
+                >
+                  Download Logs
+                </Button>
+                <Button
+                  size="sm"
+                  className="cursor-pointer bg-white text-black hover:bg-gray-300 flex-1"
+                  onClick={saveRename}
+                >
+                  Preview interaction
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="flex-col items-start pt-2 h-full">
+            <div className="flex text-sm">
+              {/* Observed response */}
+              <p>Observed response:</p>
+              {/* Error status indicator */}
+              <div className="flex items-center gap-2 pl-3">
+                <div
+                  className={`w-3 h-3 rounded-full ${
+                    hasError ? "bg-red-500" : "bg-green-500"
+                  }`}
+                ></div>
+                <span>{hasError ? "Error detected" : "No errors"}</span>
+              </div>
+            </div>
 
-      <CardFooter className="flex justify-end space-x-2 pt-4">
-        <Button
-          size="sm"
-          className="cursor-pointer bg-white text-black hover:bg-gray-300"
-          onClick={saveRename}
-        >
-          Generate preview
-        </Button>
-      </CardFooter>
+            <div className="text-sm pt-3">{observedResponse}</div>
+
+            <div className="flex h-full w-full items-end">
+              <div className="flex w-full space-x-2.5 ">
+                <Button
+                  size="sm"
+                  className="cursor-pointer bg-black text-red-600 hover:bg-gray-900 flex-1 border border-gray-800"
+                >
+                  This should be an error
+                </Button>
+                <Button
+                  size="sm"
+                  className="cursor-pointer bg-black text-green-600 hover:bg-gray-900 flex-1 border border-gray-800"
+                >
+                  This is the expected response
+                </Button>
+              </div>
+            </div>
+          </CardFooter>
+        </>
+      )}
     </Card>
   );
 }
@@ -301,7 +332,7 @@ export default function InterfacePage() {
       <div className="absolute bottom-0 left-0 right-0 h-[20vh] bg-gradient-to-t from-black to-transparent" />
 
       <div className="relative flex h-screen w-screen items-center justify-center">
-        <div className="flex p-10 justify-center bg-black">
+        <div className="flex p-10 justify-center bg-black space-x-5">
           <Tree
             {...controller}
             data={data}
@@ -316,19 +347,11 @@ export default function InterfacePage() {
             )}
           </Tree>
           <div className="min-h-full">
-            {renaming && (
-              <EditInteractionCard
-                renaming={renaming}
-                setRenaming={setRenaming}
-                saveRename={saveRename}
-              />
-            )}
-            {!renaming && (
-              <div className="w-3xl text-3xl min-h-full justify-center flex items-center">
-                {"<-"} Click on on interaction to inspect its behaviour, or drag
-                and drop to change the order of execution!
-              </div>
-            )}
+            <EditInteractionCard
+              renaming={renaming}
+              setRenaming={setRenaming}
+              saveRename={saveRename}
+            />
           </div>
         </div>
       </div>
