@@ -2,6 +2,7 @@ from uagents import Agent, Context
 import time
 import os, json, re
 from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 from mcp_use import MCPAgent, MCPClient
 
 
