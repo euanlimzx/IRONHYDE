@@ -24,6 +24,6 @@ export function processInteractions(interactions) {
     // Start with step 1 for the root-level interactions
     processInteraction(interaction);
   });
-
+  console.log(result);
   return result;
 }

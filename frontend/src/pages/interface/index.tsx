@@ -40,9 +40,11 @@ import { JellyTriangle } from "ldrs/react";
 import "ldrs/react/JellyTriangle.css";
 import LoadingStrings from "@/components/loading/loadingStrings";
 import { processInteractions } from "../../utils/processInteractions";
-import { Ripples } from "ldrs/react";
-import "ldrs/react/Ripples.css";
-import { div } from "framer-motion/client";
+import { LineSpinner } from "ldrs/react";
+import "ldrs/react/LineSpinner.css";
+
+// Default values shown
+<LineSpinner size="40" stroke="3" speed="1" color="black" />;
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -89,7 +91,11 @@ function NodeRenderer({
             e.stopPropagation();
             node.toggle();
           }}
-          className="flex items-center justify-center w-6 h-6 rounded-sm hover:bg-zinc-700/80 transition-colors"
+          className={`flex items-center justify-center w-6 h-6 rounded-sm hover:bg-zinc-700/80 transition-colors ${
+            loadingCurrNode && loadingCurrNode != node.id
+              ? " text-gray-800"
+              : "text-white"
+          }`}
         >
           {node.children.length > 0 ? (
             node.isOpen ? (
@@ -123,7 +129,7 @@ function NodeRenderer({
 
       <div className="flex items-center justify-center w-8 h-8 rounded-full text-xs font-semibold">
         {status == "LOADING" ? (
-          <Ripples size="25" speed="2" color="white" />
+          <LineSpinner size="20" stroke="2" speed="1" color="white" />
         ) : null}
         {results && results[node.id] && results[node.id].error ? (
           <div className="text-red-500">ERR</div>
@@ -140,17 +146,15 @@ interface EditInteractionCardProps {
   renaming: RenameNode;
   setRenaming: (callback: (r: any) => any) => void;
   saveRename: () => void;
+  results: results;
 }
 
 function EditInteractionCard({
   renaming, //node that is currently being renamed
   setRenaming,
   saveRename,
+  results,
 }: EditInteractionCardProps) {
-  const hasError = false; // Toggle between true/false to see different states
-  const observedResponse =
-    "The model responded with a detailed explanation about the topic as expected.";
-
   return (
     <Card className="bg-black text-white w-3xl h-full border border-gray-800">
       {!renaming && (
@@ -207,18 +211,29 @@ function EditInteractionCard({
               <p className="font-medium">Observed response:</p>
               {/* Error status indicator */}
               <div className="flex items-center gap-2 pl-3">
-                <div
-                  className={`w-3 h-3 rounded-full ${
-                    hasError ? "bg-red-500" : "bg-green-500"
-                  }`}
-                ></div>
-                <span>{hasError ? "Error detected" : "No errors"}</span>
+                {results[renaming.node.id] && (
+                  <div
+                    className={`w-3 h-3 rounded-full ${
+                      results[renaming.node.id].error
+                        ? "bg-red-500"
+                        : "bg-green-500"
+                    }`}
+                  ></div>
+                )}
+                {results[renaming.node.id] && (
+                  <span>
+                    {results[renaming.node.id].error
+                      ? "Error detected"
+                      : "No errors"}
+                  </span>
+                )}
               </div>
             </div>
-
-            <div className="text-sm pt-3 font-light leading-relaxed">
-              {observedResponse}
-            </div>
+            {results[renaming.node.id] && (
+              <div className="text-sm pt-3 font-light leading-relaxed">
+                {results[renaming.node.id].observation}
+              </div>
+            )}
 
             <div className="flex h-full w-full items-end">
               <div className="flex w-full space-x-2.5 ">
@@ -310,7 +325,7 @@ export default function InterfacePage({ currPage, domain }) {
       const result = {
         id: interaction.id,
         error: Math.random() < 0.5,
-        observations: "cb dog",
+        observation: "cb dog",
       };
 
       setResults((prevResults) => ({
@@ -416,6 +431,7 @@ export default function InterfacePage({ currPage, domain }) {
               renaming={renaming}
               setRenaming={setRenaming}
               saveRename={saveRename}
+              results={results}
             />
           </div>
         </div>
