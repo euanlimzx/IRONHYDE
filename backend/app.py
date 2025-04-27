@@ -20,11 +20,23 @@ import uuid
 import time
 from datetime import datetime
 from pathlib import Path
+from flask_cors import CORS
 
 load_dotenv(find_dotenv())
 
 # Create a Flask application instance
 app = Flask(__name__)
+
+CORS(
+    app,
+    resources={
+        r"/*": {
+            "origins": ["*"],  # Add your frontend origins
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+        }
+    },
+)
 
 # Global recording state
 recording_state = {
@@ -136,11 +148,11 @@ async def test_interaction():
             output_dir.mkdir(exist_ok=True)
 
             # Start xvfb
-            xvfb_process = await start_xvfb()
+            xvfb_process = start_xvfb()
 
             # Start ffmpeg recording
             output_file = output_dir / "recording.mp4"
-            ffmpeg_process = await start_ffmpeg_recording(str(output_file))
+            ffmpeg_process = start_ffmpeg_recording(str(output_file))
 
             # Update recording state
             recording_state = {
@@ -169,9 +181,9 @@ async def test_interaction():
                 )
 
             # Stop recording processes
-            await stop_ffmpeg_recording(recording_state["ffmpeg_process"])
-            await stop_xvfb(recording_state["xvfb_process"])
-            await clean_ffmpeg_stream()
+            stop_ffmpeg_recording(recording_state["ffmpeg_process"])
+            stop_xvfb(recording_state["xvfb_process"])
+            clean_ffmpeg_stream()
 
             # Calculate recording duration
             duration = time.time() - recording_state["start_time"]
@@ -257,10 +269,10 @@ async def test_interaction():
         if recording_state["is_recording"]:
             try:
                 if recording_state["ffmpeg_process"]:
-                    await stop_ffmpeg_recording(recording_state["ffmpeg_process"])
+                    stop_ffmpeg_recording(recording_state["ffmpeg_process"])
                 if recording_state["xvfb_process"]:
-                    await stop_xvfb(recording_state["xvfb_process"])
-                await clean_ffmpeg_stream()
+                    stop_xvfb(recording_state["xvfb_process"])
+                clean_ffmpeg_stream()
             except Exception as cleanup_error:
                 print(f"Error during cleanup: {cleanup_error}")
 
