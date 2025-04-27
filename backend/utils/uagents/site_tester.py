@@ -1,6 +1,9 @@
 from .base_agent import BaseAgent
 from uagents import Model, Context
 from typing import Optional
+from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
+from mcp_use import MCPAgent, MCPClient
 
 
 class SiteTesterRequest(Model):
@@ -54,6 +57,21 @@ class SiteTester(BaseAgent):
             json_data = self.extract_json_from_response(result)
 
             return json_data
+
+    def init_mcp(self, additional_arg=None):
+
+        # Create configuration dictionary
+        config = {"mcpServers": {"playwright": {"url": "http://localhost:8931/sse"}}}
+
+        # Create MCPClient from configuration dictionary
+        client = MCPClient.from_dict(config)
+
+        self.mcp_agent = MCPAgent(
+            llm=ChatOpenAI(model="gpt-4o"),
+            client=client,
+            use_server_manager=True,  # Enable the Server Manager
+            max_steps=30,
+        )
 
 
 if __name__ == "__main__":

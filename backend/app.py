@@ -15,18 +15,31 @@ from dotenv import load_dotenv, find_dotenv
 import asyncio
 from hypercorn.config import Config
 from hypercorn.asyncio import serve
-import json, signal
+import signal
+import uuid
+import time
+from datetime import datetime
+from pathlib import Path
 
 load_dotenv(find_dotenv())
 
 # Create a Flask application instance
 app = Flask(__name__)
 
-# instantiate all the agents we need
-# html_analyzer = HtmlAnalyzer()
+# Global recording state
+recording_state = {
+    "is_recording": False,
+    "xvfb_process": None,
+    "ffmpeg_process": None,
+    "session_id": None,
+    "output_dir": None,
+    "current_output_file": None,
+    "start_time": None,
+}
 
-# fetch urls + interactions with each page
-# url and the actions on the page, execute -> stream video
+# Create videos directory if it doesn't exist
+VIDEOS_DIR = Path("./videos")
+VIDEOS_DIR.mkdir(exist_ok=True)
 
 
 # Route for the home page
@@ -92,6 +105,8 @@ async def crawl():
 
 @app.post("/test-interaction")
 async def test_interaction():
+    global recording_state
+
     try:
         # Get JSON data from request
         data = request.get_json()
@@ -100,6 +115,109 @@ async def test_interaction():
         if not data:
             return jsonify({"error": "Missing JSON body in request"}), 400
 
+        # Handle recording control commands
+        command = data.get("command", "").lower()
+
+        if command == "start":
+            # Start a new recording session if not already recording
+            if recording_state["is_recording"]:
+                return jsonify(
+                    {
+                        "success": False,
+                        "message": "Recording already in progress",
+                        "session_id": recording_state["session_id"],
+                    }
+                )
+
+            # Generate session ID and create output directory
+            session_id = str(uuid.uuid4())
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_dir = VIDEOS_DIR / f"session_{timestamp}_{session_id[:8]}"
+            output_dir.mkdir(exist_ok=True)
+
+            # Start xvfb
+            xvfb_process = await start_xvfb()
+
+            # Start ffmpeg recording
+            output_file = output_dir / "recording.mp4"
+            ffmpeg_process = await start_ffmpeg_recording(str(output_file))
+
+            # Update recording state
+            recording_state = {
+                "is_recording": True,
+                "xvfb_process": xvfb_process,
+                "ffmpeg_process": ffmpeg_process,
+                "session_id": session_id,
+                "output_dir": output_dir,
+                "current_output_file": output_file,
+                "start_time": time.time(),
+            }
+
+            return jsonify(
+                {
+                    "success": True,
+                    "message": "Recording started",
+                    "session_id": session_id,
+                }
+            )
+
+        elif command == "stop":
+            # Stop the current recording session
+            if not recording_state["is_recording"]:
+                return jsonify(
+                    {"success": False, "message": "No recording in progress"}
+                )
+
+            # Stop recording processes
+            await stop_ffmpeg_recording(recording_state["ffmpeg_process"])
+            await stop_xvfb(recording_state["xvfb_process"])
+            await clean_ffmpeg_stream()
+
+            # Calculate recording duration
+            duration = time.time() - recording_state["start_time"]
+
+            # Get session info before resetting
+            session_info = {
+                "session_id": recording_state["session_id"],
+                "output_file": str(recording_state["current_output_file"]),
+                "duration": duration,
+            }
+
+            # Reset recording state
+            recording_state = {
+                "is_recording": False,
+                "xvfb_process": None,
+                "ffmpeg_process": None,
+                "session_id": None,
+                "output_dir": None,
+                "current_output_file": None,
+                "start_time": None,
+            }
+
+            return jsonify(
+                {
+                    "success": True,
+                    "message": "Recording stopped",
+                    "recording_info": session_info,
+                }
+            )
+
+        elif command == "status":
+            # Return current recording status
+            if recording_state["is_recording"]:
+                duration = time.time() - recording_state["start_time"]
+                return jsonify(
+                    {
+                        "is_recording": True,
+                        "session_id": recording_state["session_id"],
+                        "duration": duration,
+                        "output_file": str(recording_state["current_output_file"]),
+                    }
+                )
+            else:
+                return jsonify({"is_recording": False})
+
+        # If no command is specified, handle as a regular test interaction
         if (
             not data.get("page_url")
             or not data.get("interaction_description")
@@ -108,48 +226,55 @@ async def test_interaction():
             return (
                 jsonify(
                     {
-                        "error": "Missing required fields:  page_url: str, interaction_description: str, expected_result: str"
+                        "error": "Missing required fields: page_url: str, interaction_description: str, expected_result: str"
                     }
                 ),
                 400,
             )
 
-        # Start recording
-        process_ids = []
-        try:
-            # xvfb_process = await start_xvfb()
-            # process_ids.append(xvfb_process.pid)
+        # Execute the test interaction - if we're recording, it will be captured
+        result = requests.post(
+            os.getenv("SITE_TESTER"),
+            json={
+                "page_url": data.get("page_url"),
+                "interaction_description": data.get("interaction_description"),
+                "expected_result": data.get("expected_result"),
+            },
+        )
 
-            # ffmpeg_process = await start_ffmpeg_recording()
-            # process_ids.append(ffmpeg_process.pid)
+        # Return test results along with recording info if applicable
+        response_data = result.json()
+        if recording_state["is_recording"]:
+            response_data["recording"] = {
+                "is_recording": True,
+                "session_id": recording_state["session_id"],
+            }
 
-            # Execute the test interaction
-            result = requests.post(
-                os.getenv("SITE_TESTER"),
-                json={
-                    "page_url": data.get("page_url"),
-                    "interaction_description": data.get("interaction_description"),
-                    "expected_result": data.get("expected_result"),
-                },
-            )
-
-            # Stop recording
-            # await stop_ffmpeg_recording(ffmpeg_process)
-            # await stop_xvfb(xvfb_process)
-            # await clean_ffmpeg_stream()
-
-            return result.json()
-
-        except Exception as e:
-            # Ensure processes are cleaned up on error
-            for pid in process_ids:
-                try:
-                    os.kill(pid, signal.SIGTERM)
-                except ProcessLookupError:
-                    pass
-            raise e
+        return jsonify(response_data)
 
     except Exception as e:
+        # Ensure processes are cleaned up on error
+        if recording_state["is_recording"]:
+            try:
+                if recording_state["ffmpeg_process"]:
+                    await stop_ffmpeg_recording(recording_state["ffmpeg_process"])
+                if recording_state["xvfb_process"]:
+                    await stop_xvfb(recording_state["xvfb_process"])
+                await clean_ffmpeg_stream()
+            except Exception as cleanup_error:
+                print(f"Error during cleanup: {cleanup_error}")
+
+            # Reset recording state on error
+            recording_state = {
+                "is_recording": False,
+                "xvfb_process": None,
+                "ffmpeg_process": None,
+                "session_id": None,
+                "output_dir": None,
+                "current_output_file": None,
+                "start_time": None,
+            }
+
         return (
             jsonify({"success": False, "error": f"Test execution failed: {str(e)}"}),
             500,
@@ -180,6 +305,22 @@ def page_not_found(e):
     return "Page not found!", 404
 
 
+# Graceful shutdown handler
+async def shutdown_handler():
+    global recording_state
+
+    # Clean up recording if in progress
+    if recording_state["is_recording"]:
+        try:
+            if recording_state["ffmpeg_process"]:
+                await stop_ffmpeg_recording(recording_state["ffmpeg_process"])
+            if recording_state["xvfb_process"]:
+                await stop_xvfb(recording_state["xvfb_process"])
+            await clean_ffmpeg_stream()
+        except Exception as e:
+            print(f"Error during shutdown cleanup: {e}")
+
+
 async def start_services():
     # Start the HTML Analyzer in the background
     link_grabber = LinkGrabber()
@@ -200,6 +341,9 @@ async def start_services():
     try:
         await serve(app, config)
     finally:
+        # Clean up recording if server shuts down
+        await shutdown_handler()
+
         # Ensure analyzer task is cleaned up
         link_grabber_task.cancel()
         action_analyzer_task.cancel()
@@ -215,5 +359,9 @@ async def start_services():
 
 
 if __name__ == "__main__":
+    # Register signal handlers for graceful shutdown
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        signal.signal(sig, lambda s, f: asyncio.ensure_future(shutdown_handler()))
+
     # Run both services using asyncio
     asyncio.run(start_services())
