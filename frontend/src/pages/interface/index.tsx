@@ -239,7 +239,7 @@ function EditInteractionCard({
                 {results[renaming.node.id] && (
                   <div
                     className={`w-3 h-3 rounded-full ${
-                      results[renaming.node.id].error
+                      !results[renaming.node.id].test_passed
                         ? "bg-red-500"
                         : "bg-green-500"
                     }`}
@@ -247,7 +247,7 @@ function EditInteractionCard({
                 )}
                 {results[renaming.node.id] && (
                   <span>
-                    {results[renaming.node.id].error
+                    {!results[renaming.node.id].test_passed
                       ? "Error detected"
                       : "No errors"}
                   </span>
@@ -256,7 +256,7 @@ function EditInteractionCard({
             </div>
             {results[renaming.node.id] && (
               <div className="text-sm pt-3 font-light leading-relaxed">
-                {results[renaming.node.id].observation}
+                {results[renaming.node.id].test_report}
               </div>
             )}
 
@@ -270,8 +270,8 @@ function EditInteractionCard({
 
 export interface result {
   id: string;
-  observation: string;
-  error: boolean;
+  test_report: string;
+  test_passed: boolean;
 }
 
 export interface results {
@@ -314,21 +314,30 @@ export default function InterfacePage({
   }
 
   async function runInteraction(interaction) {
-    setLoadingCurrNode(interaction.id);
-    await sleep(1000); // wait 1 second before proceeding
-    const result = {
-      id: interaction.id,
-      error: Math.random() < 0.5,
-      observation: "The heading is present and it matches the expected Text",
+    let config = {
+      method: "post",
+      maxBodyLength: Infinity,
+      url: "http://64.23.190.48:3001/test-interaction",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: interaction,
     };
-    setResults((prevResults) => ({
-      ...prevResults,
-      [interaction.id]: result,
-    }));
-    return result;
-  }
-  function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+
+    try {
+      // Send the request and wait for the response
+      const response = await axios.request(config);
+      const result = response.data;
+      setResults((prevResults) => ({
+        ...prevResults,
+        [interaction.id]: result,
+      }));
+      console.log(response);
+      return result;
+    } catch (error) {
+      console.error("Error fetching test data:", error);
+      throw error; // Propagate the error for further handling if needed
+    }
   }
 
   const fetchFfmpeg = async () => {
@@ -347,6 +356,7 @@ export default function InterfacePage({
     try {
       // Send the request and wait for the response
       const response = await axios.request(config);
+      console.log(response);
       return response.data; // Return the API response data
     } catch (error) {
       console.error("Error fetching test data:", error);
@@ -362,18 +372,26 @@ export default function InterfacePage({
     setVideo(
       `http://64.23.190.48:8008/videos/session_${sessionId}/recording.mp4/stream.m3u8`
     );
-    // for (const interaction of processedInteractions) {
-    //   await runInteraction(interaction);
-    // }
+    console.log(
+      `http://64.23.190.48:8008/videos/session_${sessionId}/recording.mp4/stream.m3u8`
+    );
+    for (const interaction of processedInteractions) {
+      setLoadingCurrNode(interaction.id);
+      await runInteraction(interaction);
+    }
 
     setLoadingCurrNode(null);
   }
 
   async function triggerTest(id) {
+    setLoadingCurrNode(id);
     const interaction = processSingleInteraction(data, id);
     const res = await fetchFfmpeg();
     const sessionId = res.session_id.slice(0, 8);
     setNestedVideo(
+      `http://64.23.190.48:8008/videos/session_${sessionId}/recording.mp4/stream.m3u8`
+    );
+    console.log(
       `http://64.23.190.48:8008/videos/session_${sessionId}/recording.mp4/stream.m3u8`
     );
     await runInteraction(interaction);

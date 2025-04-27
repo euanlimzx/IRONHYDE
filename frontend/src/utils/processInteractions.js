@@ -8,6 +8,9 @@ export function processInteractions(interactions) {
       result.push({
         id: interaction.id,
         name: `${parentName}${stepNumber}. ${interaction.name}`,
+        expected_result: interaction.expected_result,
+        page_url: interaction.page_url,
+        interaction_description: `${parentName}${stepNumber}. ${interaction.name}`,
       });
     } else {
       // If there are children, accumulate the name and process the children
@@ -36,6 +39,11 @@ export function processSingleInteraction(interactions, targetId) {
       return {
         id: interaction.id,
         name: newPath.map((p) => `${p.step}. ${p.name}`).join(" "),
+        expected_result: interaction.expected_result,
+        page_url: interaction.page_url,
+        interaction_description: newPath
+          .map((p) => `${p.step}. ${p.name}`)
+          .join(" "),
       };
     }
 
