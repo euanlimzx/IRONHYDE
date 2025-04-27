@@ -1,8 +1,16 @@
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, request
 from utils.agent import run_agent, mcp_server_manager
+from utils.uagents.base_agent import BaseAgent
+
 
 # Create a Flask application instance
 app = Flask(__name__)
+
+# instantiate all the agents we need
+
+
+# fetch urls + interactions with each page
+# url and the actions on the page, execute -> stream video
 
 
 # Route for the home page

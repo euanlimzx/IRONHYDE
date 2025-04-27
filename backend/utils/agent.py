@@ -12,13 +12,14 @@ key = os.getenv("OPENAI_API_KEY")
 async def run_agent():
     # Create configuration dictionary
     config = {
-        "mcpServers": {
-            "playwright": {
-                "command": "npx",
-                "args": ["@playwright/mcp@latest"],
-                "env": {"DISPLAY": ":1"},
-            }
-        }
+        # "mcpServers": {
+        # "playwright": {
+        #     "command": "npx",
+        #     "args": ["@playwright/mcp@latest"],
+        #     "env": {"DISPLAY": ":1"},
+        # }
+        # }
+        "mcpServers": {"playwright": {"url": "http://localhost:8931/sse"}}
     }
 
     # Create MCPClient from configuration dictionary
@@ -34,7 +35,7 @@ async def run_agent():
         max_steps=30,
         system_prompt=(
             "Return your result as a JSON of the following format:"
-            "{{success: bool, message: str, captured_network_requests: str}}"
+            # "{{success: bool, message: str, captured_network_requests: str}}"
         ),
     )
 
@@ -43,7 +44,8 @@ async def run_agent():
         "visit https://the-internet.herokuapp.com/add_remove_elements/ and click add element."
     )
 
-    return json.loads(result)
+    # return json.loads(result)
+    print(result)
 
 
 async def mcp_server_manager():
@@ -72,7 +74,8 @@ async def mcp_server_manager():
 
     result = await agent.run(
         "visit https://the-internet.herokuapp.com/add_remove_elements/ and click add element."
-        "Use the browser_take_screenshot tool to take a screenshot of the full page and save the image to the /Users/shawnwei/Developer/UCLA/Personal/LA-Hacks/backend/static folder"
+        "Use browser_screen_move_mouse to move the cursor to button that you want click and use browser_hover to place the cursor over the element"
+        "Use the browser_take_screenshot tool to take a screenshot of the full page"
         "Tell me where the screenshot is saved to"
     )
 
@@ -80,4 +83,5 @@ async def mcp_server_manager():
 
 
 if __name__ == "__main__":
-    asyncio.run(mcp_server_manager())
+    # asyncio.run(mcp_server_manager())
+    asyncio.run(run_agent())
