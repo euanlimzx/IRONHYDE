@@ -7,12 +7,7 @@ from mcp_use import MCPAgent, MCPClient
 
 
 class BaseAgent:
-    def __init__(
-        self,
-        name: str,
-        seed: str,
-        port_number: int,
-    ):
+    def __init__(self, name: str, seed: str, port_number: int, readme_path: str):
         self.name = name
 
         # 1. Create the agent instance
@@ -21,7 +16,10 @@ class BaseAgent:
             seed=seed,
             port=port_number,
             endpoint=[f"http://127.0.0.1:{port_number}/submit"],
+            readme_path=readme_path,
         )
+
+        print(self.agent._readme)
 
         # Register the default startup handler
         @self.agent.on_event("startup")

@@ -4,6 +4,7 @@ from typing import Optional
 from langchain_openai import ChatOpenAI
 from langchain_groq import ChatGroq
 from mcp_use import MCPAgent, MCPClient
+from pathlib import Path
 
 
 class SiteTesterRequest(Model):
@@ -24,10 +25,14 @@ class SiteTester(BaseAgent):
         seed: str = "site_tester_seed",
         port_number: int = 8004,
     ):
+
+        current_dir = Path(__file__).parent.absolute()
+        readme_path = current_dir / "site_tester.md"
         super().__init__(
             name=name,
             seed=seed,
             port_number=port_number,
+            readme_path=readme_path,
         )
 
         self.init_mcp("--vision")

@@ -1,5 +1,6 @@
 from .base_agent import BaseAgent
 from uagents import Model, Context
+from pathlib import Path
 
 
 class LinkGrabRequest(Model):
@@ -17,10 +18,13 @@ class LinkGrabber(BaseAgent):
         seed: str = "link_grabber_seed",
         port_number: int = 8002,
     ):
+        current_dir = Path(__file__).parent.absolute()
+        readme_path = current_dir / "link_grabber.md"
         super().__init__(
             name=name,
             seed=seed,
             port_number=port_number,
+            readme_path=readme_path,
         )
 
         self.init_mcp()
@@ -31,7 +35,6 @@ class LinkGrabber(BaseAgent):
         ) -> LinkGrabResponse:
             target_site = request.start_page
 
-            print("EHY")
             result = await self.mcp_agent.run(
                 f"visit {target_site}"
                 f"Find me all the pages within the same domain that {target_site} will link me to"

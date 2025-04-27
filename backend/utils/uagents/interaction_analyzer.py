@@ -3,6 +3,7 @@ from uagents import Model, Context
 from typing import Optional
 from langchain_openai import ChatOpenAI
 from mcp_use import MCPAgent, MCPClient
+from pathlib import Path
 
 
 class ActionAnalyzerRequest(Model):
@@ -26,10 +27,13 @@ class ActionAnalyzer(BaseAgent):
         seed: str = "interaction_analyzer_seed",
         port_number: int = 8003,
     ):
+        current_dir = Path(__file__).parent.absolute()
+        readme_path = current_dir / "interaction_analyzer.md"
         super().__init__(
             name=name,
             seed=seed,
             port_number=port_number,
+            readme_path=readme_path,
         )
 
         self.init_mcp("--vision")
