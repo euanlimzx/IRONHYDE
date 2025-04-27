@@ -3,73 +3,91 @@
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import InterfacePage from "./interface";
+import axios from "axios";
+
+function generateUUID() {
+  return crypto.randomUUID(); // This method generates a unique UUID.
+}
 
 export default function IronhideLanding() {
   const [running, setRunning] = useState(false);
   const [fadeIn, setFadeIn] = useState(false);
-  const [data, setData] = useState(null);
-  const [domain, setDomain] = useState(null);
+  const [transformedData, setTransformedData] = useState(null);
+  const [currRouteNodes, setCurrRouteNodes] = useState(null);
+  const [domain, setDomain] = useState<string>("");
+  const [routes, setRoutes] = useState<string[]>([]);
+  const [currRoute, setCurrRoute] = useState(null);
 
-  const initialData = {
-    urls: [
-      "https://www.example.com/services/web-development",
-      "https://www.example.com/about/team",
-      "https://www.example.com/contact/customer-support",
-      "https://www.example.com/store/clothing/menswear",
-      "https://www.example.com/resources/tutorials/react",
-    ],
-    interactions: [
-      { id: "1", name: "Click the blue button on the top right", children: [] },
-      { id: "2", name: "Scroll down to reveal more options", children: [] },
-      {
-        id: "3",
-        name: "Hover over the menu to expand it",
-        children: [
-          {
-            id: "c1",
-            name: "Drag the slider to adjust brightness",
-            children: [],
-          },
-          {
-            id: "c2",
-            name: "Double-click the icon to open settings",
-            children: [],
-          },
-          { id: "c3", name: "Tap and hold to see quick actions", children: [] },
-        ],
+  const fetchTestData = async () => {
+    if (!domain) {
+      return;
+    }
+    let data = JSON.stringify({
+      targetUrl: domain,
+    });
+
+    let config = {
+      method: "post",
+      maxBodyLength: Infinity,
+      url: "http://64.23.190.48:3001/crawl-and-get-tests",
+      headers: {
+        "Content-Type": "application/json",
       },
-      {
-        id: "4",
-        name: "Click on a user to open their profile",
-        children: [
-          {
-            id: "d1",
-            name: "Send a message by clicking the chat icon",
-            children: [],
-          },
-          {
-            id: "d2",
-            name: "Mute notifications using the bell icon",
-            children: [],
-          },
-          {
-            id: "d3",
-            name: "Start a video call from the top menu",
-            children: [],
-          },
-        ],
-      },
-    ],
+      data: data,
+    };
+
+    try {
+      // Send the request and wait for the response
+      const response = await axios.request(config);
+      return response.data; // Return the API response data
+    } catch (error) {
+      console.error("Error fetching test data:", error);
+      throw error; // Propagate the error for further handling if needed
+    }
   };
 
-  const runTests = () => {
+  const runTests = async () => {
     setRunning(true); // trigger the InterfacePage display
-    setDomain("https://www.example.com");
+    // Add the page_url to the Set of URLs
     setTimeout(() => setFadeIn(true), 50); // delay fade-in effect for smooth transition
-    const timer = setTimeout(() => {
-      setData(initialData);
-    }, 0); // 5 seconds delay
+    const prevUrls = new Set();
+    const initialData = await fetchTestData();
+    if (!initialData) {
+      setRunning(false);
+      return;
+    }
+    const transformedData = initialData.flatMap((page) =>
+      page.interactions.map((interaction) => {
+        // Add the page_url to the Set of URLs
+        prevUrls.add(page.page_url);
+        return {
+          id: generateUUID(),
+          name: interaction.interaction_description,
+          children: [],
+          page_url: page.page_url,
+          expected_result: interaction.expected_result,
+        };
+      })
+    );
+    const routeArr = Array.from(prevUrls);
+    setRoutes(routeArr);
+    setTransformedData(transformedData);
   };
+
+  useEffect(() => {
+    if (routes.length > 0) {
+      setCurrRoute(routes[0]);
+    }
+  }, [routes]);
+
+  useEffect(() => {
+    if (transformedData) {
+      const filteredData = transformedData.filter(
+        (item) => item.page_url === currRoute
+      );
+      setCurrRouteNodes(filteredData);
+    }
+  }, [currRoute]);
 
   return (
     <>
@@ -79,7 +97,14 @@ export default function IronhideLanding() {
             fadeIn ? "opacity-100" : "opacity-0"
           }`}
         >
-          <InterfacePage currPage={data} domain={domain} />
+          <InterfacePage
+            key={JSON.stringify(currRouteNodes)}
+            currRouteNodes={currRouteNodes}
+            domain={domain}
+            routes={routes}
+            currRoute={currRoute}
+            setCurrRoute={setCurrRoute}
+          />
         </div>
       ) : (
         <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4">
@@ -93,7 +118,7 @@ export default function IronhideLanding() {
             </h1>
 
             <div className="mx-auto max-w-xl">
-              <p className="text-sm text-slate-400 sm:text-base md:text-lg">
+              <p className="animate-pulse text-slate-400 md:text-2xl bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 bg-clip-text text-transparent">
                 End-to-end blackbox testing powered by AI agents
               </p>
             </div>
@@ -101,6 +126,8 @@ export default function IronhideLanding() {
               <Input
                 className="h-12 border border-gray-800 bg-black"
                 placeholder="Enter your website URL"
+                value={domain}
+                onChange={(e) => setDomain(e.target.value)}
               />{" "}
               {/* Make sure Input has a fixed height */}
               <div

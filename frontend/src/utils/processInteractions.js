@@ -44,7 +44,6 @@ export function processSingleInteraction(interactions, targetId) {
       const result = search(child, newPath, step + 1);
       if (result) return result;
     }
-
     return null;
   }
 
