@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 const LoadingStrings = () => {
+  //todo euan check on this
   const strings = [
     "Hang tight, I’m just warming up for a deep dive into your website.",
     "Let me get my thinking cap on... I’m about to analyze everything, maybe even overthink it.",

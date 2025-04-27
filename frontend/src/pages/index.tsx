@@ -68,7 +68,7 @@ export default function IronhideLanding() {
     setTimeout(() => setFadeIn(true), 50); // delay fade-in effect for smooth transition
     const timer = setTimeout(() => {
       setData(initialData);
-    }, 3000); // 5 seconds delay
+    }, 0); // 5 seconds delay
   };
 
   return (
@@ -79,7 +79,7 @@ export default function IronhideLanding() {
             fadeIn ? "opacity-100" : "opacity-0"
           }`}
         >
-          <InterfacePage payload={data} domain={domain} />
+          <InterfacePage currPage={data} domain={domain} />
         </div>
       ) : (
         <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4">

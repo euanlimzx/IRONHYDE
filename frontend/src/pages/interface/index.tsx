@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Inter } from "next/font/google";
 import { Separator } from "@/components/ui/separator";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsRight, ChevronsUpDown } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -39,6 +39,10 @@ import {
 import { JellyTriangle } from "ldrs/react";
 import "ldrs/react/JellyTriangle.css";
 import LoadingStrings from "@/components/loading/loadingStrings";
+import { processInteractions } from "../../utils/processInteractions";
+import { Ripples } from "ldrs/react";
+import "ldrs/react/Ripples.css";
+import { div } from "framer-motion/client";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -49,16 +53,28 @@ function NodeRenderer({
   style,
   dragHandle,
   onRenameRequest,
+  results,
+  loadingCurrNode,
 }: {
   node: NodeApi;
   tree: TreeApi;
   style: React.CSSProperties;
   dragHandle: React.Ref<HTMLDivElement>;
   onRenameRequest: (n: NodeApi) => void;
+  results: results;
+  loadingCurrNode: string;
 }) {
   // Hardcoded boolean for error status - in a real app, this would come from your data
-  const hasError = node.id.startsWith("d"); // Just for demo: Direct Messages have errors
-  console.log(node);
+  const [status, setStatus] = useState("");
+  useEffect(() => {
+    if (loadingCurrNode) {
+      if (loadingCurrNode == node.id) {
+        setStatus("LOADING");
+      } else {
+        setStatus("DISABLED");
+      }
+    }
+  });
 
   return (
     <div
@@ -88,7 +104,11 @@ function NodeRenderer({
 
         {/* label - with truncation */}
         <div
-          className="flex-1 cursor-pointer py-1 text-base font-medium tracking-tight truncate max-w-[270px]"
+          className={`flex-1 cursor-pointer py-1 text-base font-medium truncate max-w-[270px] ${
+            loadingCurrNode && loadingCurrNode != node.id
+              ? " text-gray-800"
+              : "text-white"
+          }`}
           onClick={(e) => {
             e.stopPropagation();
             onRenameRequest(node);
@@ -100,12 +120,17 @@ function NodeRenderer({
       </div>
 
       {/* Status indicator */}
-      <div
-        className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-semibold ${
-          hasError ? " text-red-500" : " text-green-500"
-        }`}
-      >
-        {hasError ? "ERR" : "OK"}
+
+      <div className="flex items-center justify-center w-8 h-8 rounded-full text-xs font-semibold">
+        {status == "LOADING" ? (
+          <Ripples size="25" speed="2" color="white" />
+        ) : null}
+        {results && results[node.id] && results[node.id].error ? (
+          <div className="text-red-500">ERR</div>
+        ) : null}
+        {results && results[node.id] && !results[node.id].error ? (
+          <div className="text-green-500">OK</div>
+        ) : null}
       </div>
     </div>
   );
@@ -118,7 +143,7 @@ interface EditInteractionCardProps {
 }
 
 function EditInteractionCard({
-  renaming,
+  renaming, //node that is currently being renamed
   setRenaming,
   saveRename,
 }: EditInteractionCardProps) {
@@ -130,8 +155,8 @@ function EditInteractionCard({
     <Card className="bg-black text-white w-3xl h-full border border-gray-800">
       {!renaming && (
         <div className="font-semibold w-3xl p-25 text-zinc-500 text-base font-light tracking-wide text-center min-h-full justify-center flex items-center">
-          Click on an interaction to inspect its behaviour, or drag to reorder
-          the execution of instructions
+          Drag to reorder the execution of instructions, or click to inspect
+          each interaction individually
         </div>
       )}
       {renaming && (
@@ -218,8 +243,19 @@ function EditInteractionCard({
   );
 }
 
-export default function InterfacePage({ payload, domain }) {
-  if (!payload)
+export interface result {
+  id: string;
+  observation: string;
+  error: boolean;
+}
+
+export interface results {
+  [key: string]: result;
+}
+
+export default function InterfacePage({ currPage, domain }) {
+  if (!currPage)
+    //this should change to be our massive interactions payload todo @euan
     return (
       <div className="h-screen w-screen flex flex-col space-y-45 justify-center items-center relative !z-10">
         <JellyTriangle size="120" speed="1.5" color="white" />
@@ -227,11 +263,13 @@ export default function InterfacePage({ payload, domain }) {
       </div>
     );
 
-  const [data, controller] = useSimpleTree(payload.interactions);
+  const [data, controller] = useSimpleTree(currPage.interactions); //this is all the data for a Page
+  const [results, setResults] = useState<results>({});
   const [routes, setRoutes] = useState([]);
   const [renaming, setRenaming] = useState<RenameNode | null>(null);
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState(""); //for the page selection???
+  const [loadingCurrNode, setLoadingCurrNode] = useState<string | null>(null);
 
   useEffect(() => {
     function processUrls(urls, domain) {
@@ -242,13 +280,11 @@ export default function InterfacePage({ payload, domain }) {
         };
       });
     }
-    setRoutes(processUrls(payload.urls, domain));
-  }, [payload]);
+    setRoutes(processUrls(currPage.urls, domain));
+  }, [currPage]);
 
-  // whenever the user double‐clicks a node
   function handleRenameRequest(node: NodeApi) {
     setRenaming({ node, tempName: node.data.name });
-    // immediately deselect if you’d like:
     node.deselect();
   }
 
@@ -257,59 +293,102 @@ export default function InterfacePage({ payload, domain }) {
       renaming.node.submit(renaming.tempName);
     }
   }
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+  async function triggerFullTest() {
+    const processedInteractions = processInteractions(data);
+    setRenaming(null);
+    setResults({});
+
+    for (const interaction of processedInteractions) {
+      console.log("running!");
+      setLoadingCurrNode(interaction.id);
+
+      await sleep(1000); // wait 1 second before proceeding
+
+      const result = {
+        id: interaction.id,
+        error: Math.random() < 0.5,
+        observations: "cb dog",
+      };
+
+      setResults((prevResults) => ({
+        ...prevResults,
+        [interaction.id]: result,
+      }));
+    }
+
+    setLoadingCurrNode(null);
+  }
 
   return (
-    <div className="relative flex h-screen w-screen items-center justify-center z-10 ">
+    <div className="relative flex h-screen w-screen items-center justify-center z-10">
       <div className="flex p-10 justify-center bg-black space-x-5 border border-gray-800 rounded-2xl flex-col shadow-2xl shadow-gray-900">
-        <div className="flex align-middle space-x-2.5">
-          <p className="text-md font-semibold">{">>"}</p>
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={open}
-                className="w-[250px] justify-between border border-gray-800 hover:bg-zinc-800/50 hover:text-white  cursor-pointer"
-              >
-                {value
-                  ? routes.find((route) => route.value === value)?.label
-                  : "Select a page..."}
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[300px] p-0">
-              <Command className="border bg-black border-black">
-                <CommandInput
-                  placeholder="Search for a page..."
-                  className="text-white"
-                />
-                <CommandList className="w-full">
-                  <CommandEmpty>No route found.</CommandEmpty>
-                  <CommandGroup>
-                    {routes.map((route) => (
-                      <CommandItem
-                        key={route.value}
-                        value={route.value}
-                        onSelect={(currentValue) => {
-                          setValue(currentValue === value ? "" : currentValue);
-                          setOpen(false);
-                        }}
-                        className="cursor-pointer w-full"
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            value === route.value ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        {route.label}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
+        <div className="flex justify-between align-middle space-x-2.5">
+          <div className="flex items-center justify-center">
+            <div className="flex items-center pr-2">
+              <ChevronsRight className="h-4 w-4" />
+            </div>
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className="w-[250px] justify-between border border-gray-800 hover:bg-zinc-800/50 hover:text-white  cursor-pointer"
+                >
+                  {value
+                    ? routes.find((route) => route.value === value)?.label
+                    : "Select a page..."}
+                  {/* todo @euan fix this */}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[300px] p-0">
+                <Command className="border bg-black border-black">
+                  <CommandInput
+                    placeholder="Search for a page..."
+                    className="text-white"
+                  />
+                  <CommandList className="w-full">
+                    <CommandEmpty>No route found.</CommandEmpty>
+                    <CommandGroup>
+                      {routes.map((route) => (
+                        <CommandItem
+                          key={route.value}
+                          value={route.value}
+                          onSelect={(currentValue) => {
+                            setValue(
+                              currentValue === value ? "" : currentValue
+                            );
+                            setOpen(false);
+                          }}
+                          className="cursor-pointer w-full"
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              value === route.value
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {route.label}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div
+            onClick={triggerFullTest}
+            className="font-extrabold inline-flex h-12 items-center rounded-lg bg-gradient-to-r from-purple-800 via-purple-500 to-purple-800 px-6 text-sm text-white shadow-lg cursor-pointer hover:text-gray-300"
+          >
+            RUN TESTS
+          </div>
         </div>
 
         <Separator className="h-[1px] bg-gray-800 my-5" />
@@ -324,7 +403,12 @@ export default function InterfacePage({ payload, domain }) {
             padding={8}
           >
             {(props) => (
-              <NodeRenderer {...props} onRenameRequest={handleRenameRequest} />
+              <NodeRenderer
+                {...props}
+                results={results}
+                onRenameRequest={handleRenameRequest}
+                loadingCurrNode={loadingCurrNode}
+              />
             )}
           </Tree>
           <div className="min-h-full pl-5">
