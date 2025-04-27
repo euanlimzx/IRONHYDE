@@ -45,6 +45,7 @@ import {
 } from "../../utils/processInteractions";
 import { LineSpinner } from "ldrs/react";
 import "ldrs/react/LineSpinner.css";
+import Feedback from "@/components/feedback/Feedback";
 
 // Default values shown
 <LineSpinner size="40" stroke="3" speed="1" color="black" />;
@@ -249,22 +250,7 @@ function EditInteractionCard({
               </div>
             )}
 
-            <div className="flex h-full w-full items-end">
-              <div className="flex w-full space-x-2.5 ">
-                <Button
-                  size="sm"
-                  className="cursor-pointer bg-black text-red-600 hover:bg-zinc-800/50 flex-1 border border-gray-800"
-                >
-                  This should be an error
-                </Button>
-                <Button
-                  size="sm"
-                  className="cursor-pointer bg-black text-green-600 hover:bg-zinc-800/50 flex-1 border border-gray-800"
-                >
-                  This is the expected response
-                </Button>
-              </div>
-            </div>
+            <Feedback />
           </CardFooter>
         </>
       )}
@@ -287,7 +273,7 @@ export default function InterfacePage({ currPage, domain }) {
     //this should change to be our massive interactions payload todo @euan
     return (
       <div className="h-screen w-screen flex flex-col space-y-45 justify-center items-center relative !z-10">
-        <JellyTriangle size="120" speed="1.5" color="white" />
+        <JellyTriangle size="100" speed="1.5" color="white" />
         <LoadingStrings />
       </div>
     );
