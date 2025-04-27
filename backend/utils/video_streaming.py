@@ -151,7 +151,7 @@ def start_ffmpeg_recording(
         "-hls_time",
         "2",  # Segment duration
         "-hls_list_size",
-        "5",  # Max segments in playlist
+        "8",  # Max segments in playlist
         "-hls_flags",
         "delete_segments+append_list",
         os.path.join(stream_dir, "stream.m3u8"),  # Output playlist
