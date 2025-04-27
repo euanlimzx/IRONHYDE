@@ -307,7 +307,7 @@ export default function InterfacePage({
     const result = {
       id: interaction.id,
       error: Math.random() < 0.5,
-      observation: "cb dog",
+      observation: "The heading is present and it matches the expected Text",
     };
     setResults((prevResults) => ({
       ...prevResults,
@@ -350,7 +350,7 @@ export default function InterfacePage({
                   variant="outline"
                   role="combobox"
                   aria-expanded={open}
-                  className="w-[250px] justify-between border border-gray-800 hover:bg-zinc-800/50 hover:text-white  cursor-pointer"
+                  className="w-[400px] justify-between border border-gray-800 hover:bg-zinc-800/50 hover:text-white  cursor-pointer"
                 >
                   {currRoute
                     ? routes
@@ -361,8 +361,8 @@ export default function InterfacePage({
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[300px] p-0">
-                <Command className="border bg-black border-black">
+              <PopoverContent className="w-[500px] p-0">
+                <Command className="border bg-black border-black overflow-auto">
                   <CommandInput
                     placeholder="Search for a page..."
                     className="text-white"
