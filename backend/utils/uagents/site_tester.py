@@ -59,9 +59,17 @@ class SiteTester(BaseAgent):
             return json_data
 
     def init_mcp(self, additional_arg=None):
+        args = ["@playwright/mcp@latest", "--vision"]
 
-        # Create configuration dictionary
-        config = {"mcpServers": {"playwright": {"url": "http://localhost:8931/sse"}}}
+        config = {
+            "mcpServers": {
+                "playwright": {
+                    "command": "npx",
+                    "args": args,
+                    "env": {"DISPLAY": ":99"},
+                }
+            }
+        }
 
         # Create MCPClient from configuration dictionary
         client = MCPClient.from_dict(config)

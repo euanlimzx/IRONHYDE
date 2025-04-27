@@ -181,8 +181,8 @@ async def test_interaction():
                 )
 
             # Stop recording processes
-            stop_ffmpeg_recording(recording_state["ffmpeg_process"])
-            stop_xvfb(recording_state["xvfb_process"])
+            stop_ffmpeg_recording()
+            stop_xvfb()
             clean_ffmpeg_stream()
 
             # Calculate recording duration
