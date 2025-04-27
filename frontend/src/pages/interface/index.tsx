@@ -268,8 +268,14 @@ export interface results {
   [key: string]: result;
 }
 
-export default function InterfacePage({ currPage, domain }) {
-  if (!currPage)
+export default function InterfacePage({
+  currRouteNodes,
+  domain,
+  routes,
+  currRoute,
+  setCurrRoute,
+}) {
+  if (!currRouteNodes)
     //this should change to be our massive interactions payload todo @euan
     return (
       <div className="h-screen w-screen flex flex-col space-y-45 justify-center items-center relative !z-10">
@@ -278,25 +284,11 @@ export default function InterfacePage({ currPage, domain }) {
       </div>
     );
 
-  const [data, controller] = useSimpleTree(currPage.interactions); //this is all the data for a Page
+  const [data, controller] = useSimpleTree([...currRouteNodes]); //this is all the data for a Page
   const [results, setResults] = useState<results>({});
-  const [routes, setRoutes] = useState([]);
   const [renaming, setRenaming] = useState<RenameNode | null>(null);
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState(""); //for the page selection???
   const [loadingCurrNode, setLoadingCurrNode] = useState<string | null>(null);
-
-  useEffect(() => {
-    function processUrls(urls, domain) {
-      return urls.map((url) => {
-        return {
-          value: url,
-          label: url.replace(domain, ""),
-        };
-      });
-    }
-    setRoutes(processUrls(currPage.urls, domain));
-  }, [currPage]);
 
   function handleRenameRequest(node: NodeApi) {
     setRenaming({ node, tempName: node.data.name });
@@ -360,8 +352,10 @@ export default function InterfacePage({ currPage, domain }) {
                   aria-expanded={open}
                   className="w-[250px] justify-between border border-gray-800 hover:bg-zinc-800/50 hover:text-white  cursor-pointer"
                 >
-                  {value
-                    ? routes.find((route) => route.value === value)?.label
+                  {currRoute
+                    ? routes
+                        .find((route) => route === currRoute)
+                        .replace(domain, "")
                     : "Select a page..."}
                   {/* todo @euan fix this */}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -378,12 +372,10 @@ export default function InterfacePage({ currPage, domain }) {
                     <CommandGroup>
                       {routes.map((route) => (
                         <CommandItem
-                          key={route.value}
-                          value={route.value}
+                          key={route}
+                          value={route}
                           onSelect={(currentValue) => {
-                            setValue(
-                              currentValue === value ? "" : currentValue
-                            );
+                            setCurrRoute(currentValue);
                             setOpen(false);
                           }}
                           className="cursor-pointer w-full"
@@ -391,12 +383,10 @@ export default function InterfacePage({ currPage, domain }) {
                           <Check
                             className={cn(
                               "mr-2 h-4 w-4",
-                              value === route.value
-                                ? "opacity-100"
-                                : "opacity-0"
+                              currRoute === route ? "opacity-100" : "opacity-0"
                             )}
                           />
-                          {route.label}
+                          {route.replace(domain, "")}
                         </CommandItem>
                       ))}
                     </CommandGroup>
@@ -421,6 +411,7 @@ export default function InterfacePage({ currPage, domain }) {
         <Separator className="h-[1px] bg-gray-800 my-5" />
         <div className="flex ">
           <Tree
+            key={JSON.stringify(currRouteNodes)}
             {...controller}
             data={data}
             width={400}
