@@ -47,7 +47,6 @@ class SiteTester(BaseAgent):
             result = await self.mcp_agent.run(
                 "You are an Automated QA testing Agent, and your task is to execute test instructions perfectly"
                 "and generate a good report for the end users"
-                "use browser_resize to set the dimensions of the browser to have width=1920 and height=1080"
                 f"visit {request.page_url}"
                 f"interaction with page: {request.interaction_description}"
                 f"here is what you should expect: {request.expected_result}"
