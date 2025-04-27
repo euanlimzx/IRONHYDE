@@ -1,6 +1,8 @@
 from .base_agent import BaseAgent
 from uagents import Model, Context
 from typing import Optional
+from langchain_openai import ChatOpenAI
+from mcp_use import MCPAgent, MCPClient
 
 
 class ActionAnalyzerRequest(Model):
@@ -40,7 +42,7 @@ class ActionAnalyzer(BaseAgent):
         ) -> ActionAnalyzerResponse:
 
             result = await self.mcp_agent.run(
-                f"visit {request.target_page}"
+                f"using the playwright mcp server available to you, visit {request.target_page}"
                 f"You are an expert QA tester who meticulously writes test cases for potential bugs on websites"
                 "Based on all the elements available on the screen, write the description of all the test cases that you can think of"
                 "Do not change the URL of the page, and do not navigate away from the current page you are on"
@@ -57,6 +59,7 @@ class ActionAnalyzer(BaseAgent):
                     instructions_for_test: str
                     expected_result: str
                 """
+                "After you are done with your task, make sure to free the browser resource using the browser_close tool"
             )
 
             print(result)
@@ -78,6 +81,35 @@ class ActionAnalyzer(BaseAgent):
                 formatted_response["interactions"].append(formatted_interaction)
 
             return ActionAnalyzerResponse(**formatted_response)
+
+    # def init_mcp(self, additional_arg=None):
+    #     args = [
+    #         "@playwright/mcp@latest",
+    #         # "--headless",
+    #     ]
+
+    #     if additional_arg:
+    #         args.append(additional_arg)
+
+    #     # Create configuration dictionary
+    #     config = {
+    #         "mcpServers": {
+    #             "playwright": {
+    #                 "command": "npx",
+    #                 "args": args,
+    #                 "env": {"DISPLAY": ":1"},
+    #             }
+    #         }
+    #     }
+
+    #     client = MCPClient.from_dict(config)
+
+    #     self.mcp_agent = MCPAgent(
+    #         llm=ChatOpenAI(model="gpt-4o"),
+    #         client=client,
+    #         use_server_manager=True,  # Enable the Server Manager
+    #         max_steps=30,
+    #     )
 
 
 if __name__ == "__main__":

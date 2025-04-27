@@ -35,8 +35,9 @@ class LinkGrabber(BaseAgent):
             result = await self.mcp_agent.run(
                 f"visit {target_site}"
                 f"Find me all the pages within the same domain that {target_site} will link me to"
-                "Your response should strictly be a list of urls that can be parsed as a JSON"
+                "Your response should strictly be a list of the full urls that can be parsed as a JSON"
                 "Only respond in markdown"
+                "After you are done with your task, make sure to free the browser resource using the browser_close tool"
             )
 
             print(result)
