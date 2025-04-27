@@ -46,6 +46,8 @@ import {
 import { LineSpinner } from "ldrs/react";
 import "ldrs/react/LineSpinner.css";
 import Feedback from "@/components/feedback/Feedback";
+import axios from "axios";
+import VideoPlayer from "@/components/video/videoPlayer";
 
 // Default values shown
 <LineSpinner size="40" stroke="3" speed="1" color="black" />;
@@ -166,13 +168,16 @@ function EditInteractionCard({
   saveRename,
   results,
   triggerTest,
+  video,
+  nestedVideo,
 }: EditInteractionCardProps) {
   return (
     <Card className="bg-black text-white w-3xl h-full border border-gray-800">
       {!renaming && (
-        <div className="font-semibold w-3xl p-25 text-zinc-500 text-base font-light tracking-wide text-center min-h-full justify-center flex items-center">
-          Drag to reorder the execution of instructions, or click to inspect
-          each interaction individually
+        <div className="w-3xl px-4 text-zinc-500 text-base font-light tracking-wide text-center min-h-full justify-center flex items-center">
+          {video && <VideoPlayer src={video} />}
+          {!video &&
+            "Drag & drop to reorder your interactions or click to inspect each interaction individually"}
         </div>
       )}
       {renaming && (
@@ -184,8 +189,13 @@ function EditInteractionCard({
           </CardHeader>
           <CardContent className="flex flex-col md:flex-row gap-6 h-full">
             {/* Left side - Placeholder for GIF */}
-            <div className="w-full md:w-1/2 aspect-video bg-white rounded-lg flex items-center justify-center text-black">
-              <span className="text-sm text-gray-500">Preview GIF</span>
+            <div className="w-full md:w-1/2 aspect-video bg-black border border-gray-800 rounded-lg flex items-center justify-center text-black">
+              {nestedVideo && <VideoPlayer src={nestedVideo} />}
+              {!nestedVideo && (
+                <span className="text-sm text-gray-500">
+                  Your preview will appear here
+                </span>
+              )}
             </div>
 
             {/* Right side - Content */}
@@ -289,6 +299,8 @@ export default function InterfacePage({
   const [renaming, setRenaming] = useState<RenameNode | null>(null);
   const [open, setOpen] = useState(false);
   const [loadingCurrNode, setLoadingCurrNode] = useState<string | null>(null);
+  const [video, setVideo] = useState(null);
+  const [nestedVideo, setNestedVideo] = useState(null);
 
   function handleRenameRequest(node: NodeApi) {
     setRenaming({ node, tempName: node.data.name });
@@ -318,20 +330,52 @@ export default function InterfacePage({
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
+
+  const fetchFfmpeg = async () => {
+    let config = {
+      method: "post",
+      maxBodyLength: Infinity,
+      url: "http://64.23.190.48:3001/test-interaction",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: {
+        command: "start",
+      },
+    };
+
+    try {
+      // Send the request and wait for the response
+      const response = await axios.request(config);
+      return response.data; // Return the API response data
+    } catch (error) {
+      console.error("Error fetching test data:", error);
+      throw error; // Propagate the error for further handling if needed
+    }
+  };
   async function triggerFullTest() {
     const processedInteractions = processInteractions(data);
     setRenaming(null);
     setResults({});
-
-    for (const interaction of processedInteractions) {
-      await runInteraction(interaction);
-    }
+    const res = await fetchFfmpeg();
+    const sessionId = res.session_id.slice(0, 8);
+    setVideo(
+      `http://64.23.190.48:8008/videos/session_${sessionId}/recording.mp4/stream.m3u8`
+    );
+    // for (const interaction of processedInteractions) {
+    //   await runInteraction(interaction);
+    // }
 
     setLoadingCurrNode(null);
   }
 
   async function triggerTest(id) {
     const interaction = processSingleInteraction(data, id);
+    const res = await fetchFfmpeg();
+    const sessionId = res.session_id.slice(0, 8);
+    setNestedVideo(
+      `http://64.23.190.48:8008/videos/session_${sessionId}/recording.mp4/stream.m3u8`
+    );
     await runInteraction(interaction);
     setLoadingCurrNode(null);
   }
@@ -436,6 +480,8 @@ export default function InterfacePage({
               saveRename={saveRename}
               triggerTest={triggerTest}
               results={results}
+              video={video}
+              nestedVideo={nestedVideo}
             />
           </div>
         </div>
