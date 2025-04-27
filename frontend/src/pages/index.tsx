@@ -105,7 +105,7 @@ export default function IronhideLanding() {
               {/* Make sure Input has a fixed height */}
               <div
                 onClick={runTests}
-                className="font-extrabold inline-flex h-12 items-center rounded bg-gradient-to-r from-slate-700 via-slate-800 to-slate-700 px-6 text-sm text-white shadow-lg cursor-pointer"
+                className="flex font-extrabold w-1/2 justify-center h-12 items-center rounded bg-gradient-to-r from-slate-700 via-slate-800 to-slate-700 px-6 text-sm text-white shadow-lg cursor-pointer hover:text-slate-400"
               >
                 RUN TESTS
               </div>
