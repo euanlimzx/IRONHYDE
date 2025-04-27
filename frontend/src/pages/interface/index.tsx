@@ -36,6 +36,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { JellyTriangle } from "ldrs/react";
+import "ldrs/react/JellyTriangle.css";
+import LoadingStrings from "@/components/loading/loadingStrings";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -216,7 +219,13 @@ function EditInteractionCard({
 }
 
 export default function InterfacePage({ payload, domain }) {
-  if (!payload) return <div>loading</div>;
+  if (!payload)
+    return (
+      <div className="h-screen w-screen flex flex-col space-y-45 justify-center items-center relative !z-10">
+        <JellyTriangle size="120" speed="1.5" color="white" />
+        <LoadingStrings />
+      </div>
+    );
 
   const [data, controller] = useSimpleTree(payload.interactions);
   const [routes, setRoutes] = useState([]);
@@ -260,7 +269,7 @@ export default function InterfacePage({ payload, domain }) {
                 variant="outline"
                 role="combobox"
                 aria-expanded={open}
-                className="w-[200px] justify-between border border-gray-800 hover:bg-zinc-800/50 hover:text-white  cursor-pointer"
+                className="w-[250px] justify-between border border-gray-800 hover:bg-zinc-800/50 hover:text-white  cursor-pointer"
               >
                 {value
                   ? routes.find((route) => route.value === value)?.label

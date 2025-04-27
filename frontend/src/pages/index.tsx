@@ -68,7 +68,7 @@ export default function IronhideLanding() {
     setTimeout(() => setFadeIn(true), 50); // delay fade-in effect for smooth transition
     const timer = setTimeout(() => {
       setData(initialData);
-    }, 1000); // 5 seconds delay
+    }, 3000); // 5 seconds delay
   };
 
   return (
@@ -85,9 +85,11 @@ export default function IronhideLanding() {
         <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4">
           <div className="max-w-3xl text-center">
             <h1 className="mb-6 text-5xl font-bold tracking-tighter sm:text-6xl md:text-7xl lg:text-8xl">
-              <span className="bg-gradient-to-r from-slate-200 via-slate-100 to-slate-300 bg-clip-text text-transparent">
-                IRONHYDE
-              </span>
+              <div className="flex justify-center items-center">
+                <span className="bg-gradient-to-r from-slate-200 via-slate-100 to-slate-300 bg-clip-text text-transparent">
+                  IRONHYDE
+                </span>
+              </div>
             </h1>
 
             <div className="mx-auto max-w-xl">
