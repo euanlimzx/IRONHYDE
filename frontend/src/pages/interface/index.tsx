@@ -39,7 +39,10 @@ import {
 import { JellyTriangle } from "ldrs/react";
 import "ldrs/react/JellyTriangle.css";
 import LoadingStrings from "@/components/loading/loadingStrings";
-import { processInteractions } from "../../utils/processInteractions";
+import {
+  processInteractions,
+  processSingleInteraction,
+} from "../../utils/processInteractions";
 import { LineSpinner } from "ldrs/react";
 import "ldrs/react/LineSpinner.css";
 
@@ -131,10 +134,16 @@ function NodeRenderer({
         {status == "LOADING" ? (
           <LineSpinner size="20" stroke="2" speed="1" color="white" />
         ) : null}
-        {results && results[node.id] && results[node.id].error ? (
+        {loadingCurrNode != node.id &&
+        results &&
+        results[node.id] &&
+        results[node.id].error ? (
           <div className="text-red-500">ERR</div>
         ) : null}
-        {results && results[node.id] && !results[node.id].error ? (
+        {loadingCurrNode != node.id &&
+        results &&
+        results[node.id] &&
+        !results[node.id].error ? (
           <div className="text-green-500">OK</div>
         ) : null}
       </div>
@@ -143,10 +152,11 @@ function NodeRenderer({
 }
 
 interface EditInteractionCardProps {
-  renaming: RenameNode;
+  renaming: RenameNode | null;
   setRenaming: (callback: (r: any) => any) => void;
   saveRename: () => void;
   results: results;
+  triggerTest: any;
 }
 
 function EditInteractionCard({
@@ -154,6 +164,7 @@ function EditInteractionCard({
   setRenaming,
   saveRename,
   results,
+  triggerTest,
 }: EditInteractionCardProps) {
   return (
     <Card className="bg-black text-white w-3xl h-full border border-gray-800">
@@ -198,7 +209,10 @@ function EditInteractionCard({
                 <Button
                   size="sm"
                   className="cursor-pointer bg-white text-black hover:bg-gray-300 flex-1"
-                  onClick={saveRename}
+                  onClick={() => {
+                    saveRename();
+                    triggerTest(renaming.node.id);
+                  }}
                 >
                   Preview interaction
                 </Button>
@@ -308,6 +322,21 @@ export default function InterfacePage({ currPage, domain }) {
       renaming.node.submit(renaming.tempName);
     }
   }
+
+  async function runInteraction(interaction) {
+    setLoadingCurrNode(interaction.id);
+    await sleep(1000); // wait 1 second before proceeding
+    const result = {
+      id: interaction.id,
+      error: Math.random() < 0.5,
+      observation: "cb dog",
+    };
+    setResults((prevResults) => ({
+      ...prevResults,
+      [interaction.id]: result,
+    }));
+    return result;
+  }
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
@@ -317,23 +346,15 @@ export default function InterfacePage({ currPage, domain }) {
     setResults({});
 
     for (const interaction of processedInteractions) {
-      console.log("running!");
-      setLoadingCurrNode(interaction.id);
-
-      await sleep(1000); // wait 1 second before proceeding
-
-      const result = {
-        id: interaction.id,
-        error: Math.random() < 0.5,
-        observation: "cb dog",
-      };
-
-      setResults((prevResults) => ({
-        ...prevResults,
-        [interaction.id]: result,
-      }));
+      await runInteraction(interaction);
     }
 
+    setLoadingCurrNode(null);
+  }
+
+  async function triggerTest(id) {
+    const interaction = processSingleInteraction(data, id);
+    await runInteraction(interaction);
     setLoadingCurrNode(null);
   }
 
@@ -400,7 +421,7 @@ export default function InterfacePage({ currPage, domain }) {
           </div>
           <div
             onClick={triggerFullTest}
-            className="font-extrabold inline-flex h-12 items-center rounded-lg bg-gradient-to-r from-purple-800 via-purple-500 to-purple-800 px-6 text-sm text-white shadow-lg cursor-pointer hover:text-gray-300"
+            className="font-extrabold inline-flex h-12 items-center rounded-lg border-2 border-white px-6 text-sm text-white shadow-lg cursor-pointer hover:text-black hover:bg-white"
           >
             RUN TESTS
           </div>
@@ -431,6 +452,7 @@ export default function InterfacePage({ currPage, domain }) {
               renaming={renaming}
               setRenaming={setRenaming}
               saveRename={saveRename}
+              triggerTest={triggerTest}
               results={results}
             />
           </div>

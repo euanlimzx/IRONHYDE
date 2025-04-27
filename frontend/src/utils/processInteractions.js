@@ -27,3 +27,32 @@ export function processInteractions(interactions) {
   console.log(result);
   return result;
 }
+
+export function processSingleInteraction(interactions, targetId) {
+  function search(interaction, path = [], step = 1) {
+    const newPath = [...path, { step, name: interaction.name }];
+
+    if (interaction.id === targetId) {
+      return {
+        id: interaction.id,
+        name: newPath.map((p) => `${p.step}. ${p.name}`).join(" "),
+      };
+    }
+
+    for (let i = 0; i < (interaction.children || []).length; i++) {
+      const child = interaction.children[i];
+      const result = search(child, newPath, step + 1);
+      if (result) return result;
+    }
+
+    return null;
+  }
+
+  for (let i = 0; i < interactions.length; i++) {
+    const interaction = interactions[i];
+    const result = search(interaction, [], 1);
+    if (result) return result;
+  }
+
+  return null; // Not found
+}
